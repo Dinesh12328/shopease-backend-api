@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: shopease
+      MYSQL_USER: shopease
+      MYSQL_PASSWORD: shopease
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/shopease?createDatabaseIfNotExist=true&serverTimezone=UTC
+      DB_USERNAME: shopease
+      DB_PASSWORD: shopease
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      H2_CONSOLE: "false"
+      JWT_SECRET: ${JWT_SECRET:-c2hvcGVhc2UtcHJvZHVjdGlvbi1rZXktY2hhbmdlLW1lLWJlZm9yZS11c2U=}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@shopease.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  mysql_data:
+  uploads:
