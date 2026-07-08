@@ -33,6 +33,11 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/styles.css",
+                                "/app.js",
+                                "/favicon.ico",
                                 "/api/auth/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",

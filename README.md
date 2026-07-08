@@ -211,6 +211,7 @@ If the Codex in-app browser blocks localhost, use your real browser instead.
 
 | Purpose | URL |
 |---|---|
+| Interactive frontend UI | `http://127.0.0.1:8080/` |
 | Swagger UI | `http://127.0.0.1:8080/swagger-ui/index.html` |
 | Swagger UI alternate | `http://localhost:8080/swagger-ui.html` |
 | Health check | `http://127.0.0.1:8080/actuator/health` |
@@ -247,7 +248,53 @@ Leave the password empty.
 
 Important: because H2 is in-memory, data resets when the application stops.
 
-## 13. Swagger testing step by step
+## 13. Frontend UI testing step by step
+
+The project includes a simple interactive frontend inside Spring Boot. No separate React or Node setup is required.
+
+Open:
+
+```text
+http://127.0.0.1:8080/
+```
+
+Use this flow:
+
+1. Login as admin using:
+
+   ```text
+   admin@shopease.com
+   Admin@123
+   ```
+
+2. Scroll to the `Admin` section.
+3. Create a category, for example `Electronics`.
+4. Create a product and select that category.
+5. The product will appear in the `Products` section.
+6. Register a normal user or login as a user.
+7. Add product to cart.
+8. Open the cart section and check the total.
+9. Enter shipping address and place order.
+10. View order history.
+11. Login again as admin to manage order status.
+
+The frontend uses these same backend APIs:
+
+```text
+POST /api/auth/login
+POST /api/auth/register
+GET  /api/products
+POST /api/admin/categories
+POST /api/admin/products
+POST /api/cart/add
+GET  /api/cart
+POST /api/orders/place
+GET  /api/orders/user
+GET  /api/admin/orders
+PATCH /api/admin/orders/{id}/status
+```
+
+## 14. Swagger testing step by step
 
 Open Swagger:
 
@@ -501,7 +548,7 @@ DELIVERED
 CANCELLED
 ```
 
-## 14. API list
+## 15. API list
 
 ### Auth APIs
 
@@ -550,7 +597,7 @@ CANCELLED
 | GET | `/api/admin/orders` | ADMIN |
 | PATCH | `/api/admin/orders/{id}/status` | ADMIN |
 
-## 15. Request body examples
+## 16. Request body examples
 
 ### Register
 
@@ -628,7 +675,7 @@ CANCELLED
 }
 ```
 
-## 16. Run tests
+## 17. Run tests
 
 From the project root:
 
@@ -642,7 +689,7 @@ Expected result:
 BUILD SUCCESS
 ```
 
-## 17. Run with Docker and MySQL
+## 18. Run with Docker and MySQL
 
 Use this if you want MySQL instead of H2.
 
@@ -685,7 +732,7 @@ Stop Docker and delete MySQL data:
 docker compose down -v
 ```
 
-## 18. Local configuration
+## 19. Local configuration
 
 Main config file:
 
@@ -722,7 +769,13 @@ Then Swagger becomes:
 http://127.0.0.1:9090/swagger-ui/index.html
 ```
 
-## 19. Troubleshooting
+Then the frontend becomes:
+
+```text
+http://127.0.0.1:9090/
+```
+
+## 20. Troubleshooting
 
 ### Problem: Swagger says Access Denied
 
@@ -751,6 +804,15 @@ Then open:
 ```text
 http://127.0.0.1:8080/actuator/health
 ```
+
+### Problem: Frontend opens but buttons fail
+
+Check if you are logged in.
+
+- Cart and order APIs require `USER` or `ADMIN`.
+- Admin create product/category requires `ADMIN`.
+- If you see `401`, login again.
+- If you see `403`, you are using a normal user account for an admin action.
 
 ### Problem: Codex in-app browser blocks localhost
 
@@ -797,7 +859,7 @@ Examples:
 - `POST /api/admin/products` requires `ADMIN`.
 - `POST /api/cart/add` works for `USER` or `ADMIN`.
 
-## 20. Resume explanation
+## 21. Resume explanation
 
 You can describe this project like this:
 
@@ -820,4 +882,3 @@ This project demonstrates:
 - Validation and exception handling
 - API documentation with Swagger
 - Docker-based deployment setup
-
