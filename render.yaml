@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: shopease-backend-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: H2_CONSOLE
+        value: false
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: ADMIN_EMAIL
+        value: admin@shopease.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true

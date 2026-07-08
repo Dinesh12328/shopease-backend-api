@@ -114,12 +114,16 @@ src/main/java/com/shopease
 
 src/main/resources
   application.yml
+  static/index.html
+  static/styles.css
+  static/app.js
 
 src/test
   integration tests
 
 Dockerfile
 docker-compose.yml
+render.yaml
 pom.xml
 README.md
 ```
@@ -732,7 +736,90 @@ Stop Docker and delete MySQL data:
 docker compose down -v
 ```
 
-## 19. Local configuration
+## 19. Deploy online and open in browser, not localhost
+
+Localhost means the app is running only on your computer. To open it from any browser using a public internet link, deploy it to a cloud platform.
+
+This project includes `render.yaml`, so it is ready for Render deployment using Docker.
+
+### What URL you will get
+
+After deployment, Render gives you a public URL like:
+
+```text
+https://shopease-backend-api.onrender.com/
+```
+
+Your online links will look like:
+
+```text
+Frontend UI: https://shopease-backend-api.onrender.com/
+Swagger UI:  https://shopease-backend-api.onrender.com/swagger-ui/index.html
+Health:      https://shopease-backend-api.onrender.com/actuator/health
+```
+
+### Deploy on Render step by step
+
+1. Make sure the latest code is pushed to GitHub.
+2. Open:
+
+   ```text
+   https://render.com
+   ```
+
+3. Sign up or login.
+4. Click `New`.
+5. Click `Blueprint`.
+6. Connect your GitHub account if asked.
+7. Select this repository:
+
+   ```text
+   Dinesh12328/shopease-backend-api
+   ```
+
+8. Render will detect:
+
+   ```text
+   render.yaml
+   ```
+
+9. Click `Apply` or `Deploy`.
+10. Wait for the first build to finish. It can take several minutes.
+11. When deploy succeeds, open your Render service URL.
+
+### Online admin login
+
+The admin email is:
+
+```text
+admin@shopease.com
+```
+
+For `ADMIN_PASSWORD`, Render will ask you to enter a private value during deployment.
+
+Use a strong password, for example:
+
+```text
+ShopEase@2026Strong!
+```
+
+Do not publish your online admin password in GitHub.
+
+### Important cloud note
+
+This simple online deployment uses H2 database for demo/testing. That means data may reset when the cloud service restarts or redeploys.
+
+For a real production deployment, connect the app to a cloud MySQL database using these environment variables:
+
+```text
+DB_URL
+DB_USERNAME
+DB_PASSWORD
+DB_DRIVER
+H2_CONSOLE=false
+```
+
+## 20. Local configuration
 
 Main config file:
 
@@ -775,7 +862,7 @@ Then the frontend becomes:
 http://127.0.0.1:9090/
 ```
 
-## 20. Troubleshooting
+## 21. Troubleshooting
 
 ### Problem: Swagger says Access Denied
 
@@ -859,7 +946,7 @@ Examples:
 - `POST /api/admin/products` requires `ADMIN`.
 - `POST /api/cart/add` works for `USER` or `ADMIN`.
 
-## 21. Resume explanation
+## 22. Resume explanation
 
 You can describe this project like this:
 
