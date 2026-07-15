@@ -262,6 +262,17 @@ Open:
 http://127.0.0.1:8080/
 ```
 
+The frontend includes:
+
+- Dashboard counters for products, categories, cart items, and orders
+- Login/register flow with JWT stored in the browser
+- Product catalog with search, category filter, brand filter, and sorting
+- Interactive cart drawer with update/remove actions
+- Checkout form for placing orders
+- Order history cards
+- Admin studio for creating categories/products and updating order status
+- Admin-only product delete action
+
 Use this flow:
 
 1. Login as admin using:

@@ -4,10 +4,11 @@ const state = {
   categories: [],
   products: [],
   cart: null,
+  orders: [],
+  adminOrders: [],
 };
 
 const orderStatuses = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
-
 const $ = (id) => document.getElementById(id);
 
 function money(value) {
@@ -16,6 +17,21 @@ function money(value) {
     currency: "INR",
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function pageContent(page) {
+  if (!page) return [];
+  if (Array.isArray(page)) return page;
+  return page.content || [];
 }
 
 function showToast(message, type = "success") {
@@ -64,16 +80,21 @@ async function api(path, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && state.token && !path.includes("/api/auth/")) {
+      clearSession(false);
+    }
     throw new Error(payload?.message || `${response.status} ${response.statusText}`);
   }
 
   return payload?.data ?? payload;
 }
 
-function pageContent(page) {
-  if (!page) return [];
-  if (Array.isArray(page)) return page;
-  return page.content || [];
+function updateMetrics() {
+  $("productCount").textContent = state.products.length;
+  $("categoryCount").textContent = state.categories.length;
+  $("cartCount").textContent = state.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  $("cartBadge").textContent = $("cartCount").textContent;
+  $("orderCount").textContent = state.orders.length;
 }
 
 function saveSession(authResponse) {
@@ -84,16 +105,23 @@ function saveSession(authResponse) {
   updateSessionUi();
 }
 
-function clearSession() {
+function clearSession(showMessage = true) {
   state.token = null;
   state.user = null;
   state.cart = null;
+  state.orders = [];
+  state.adminOrders = [];
   localStorage.removeItem("shopease_token");
   localStorage.removeItem("shopease_user");
   updateSessionUi();
   renderCart(null);
   renderOrders([]);
   renderAdminOrders([]);
+  updateMetrics();
+
+  if (showMessage) {
+    showToast("Logged out");
+  }
 }
 
 function updateSessionUi() {
@@ -101,52 +129,54 @@ function updateSessionUi() {
   const currentUser = $("currentUser");
   const logoutButton = $("logoutButton");
   const adminPanel = $("adminPanel");
+  const adminNavLink = $("adminNavLink");
 
   if (!state.user) {
     badge.textContent = "Guest";
-    badge.className = "badge muted";
+    badge.className = "pill neutral";
     currentUser.classList.add("hidden");
     logoutButton.classList.add("hidden");
     adminPanel.classList.add("hidden");
+    adminNavLink.classList.add("hidden");
+    renderProducts();
     return;
   }
 
   const role = state.user.role;
   badge.textContent = role;
-  badge.className = `badge ${role === "ADMIN" ? "admin" : "user"}`;
+  badge.className = `pill ${role === "ADMIN" ? "admin" : "user"}`;
   currentUser.innerHTML = `
-    <strong>${escapeHtml(state.user.name)}</strong><br>
-    ${escapeHtml(state.user.email)}<br>
-    Role: ${escapeHtml(role)}
+    <strong>${escapeHtml(state.user.name)}</strong>
+    <span>${escapeHtml(state.user.email)}</span>
+    <span>Role: ${escapeHtml(role)}</span>
   `;
   currentUser.classList.remove("hidden");
   logoutButton.classList.remove("hidden");
   adminPanel.classList.toggle("hidden", role !== "ADMIN");
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  adminNavLink.classList.toggle("hidden", role !== "ADMIN");
+  renderProducts();
 }
 
 async function checkHealth() {
+  const dot = $("apiStatusDot");
+
   try {
     const health = await fetch("/actuator/health").then((res) => res.json());
-    $("apiStatus").textContent = health.status === "UP" ? "Online" : health.status;
-    $("apiStatusHint").textContent = "Spring Boot API is reachable";
+    const online = health.status === "UP";
+    $("apiStatus").textContent = online ? "Online" : health.status;
+    $("apiStatusHint").textContent = online ? "Spring Boot API is ready" : "API returned a non-UP status";
+    dot.className = `status-dot ${online ? "online" : "offline"}`;
   } catch {
     $("apiStatus").textContent = "Offline";
-    $("apiStatusHint").textContent = "Start the backend from IntelliJ";
+    $("apiStatusHint").textContent = "Start ShopEaseApplication from IntelliJ";
+    dot.className = "status-dot offline";
   }
 }
 
 async function loadCategories() {
   state.categories = await api("/api/categories");
   renderCategoryOptions();
+  updateMetrics();
 }
 
 function renderCategoryOptions() {
@@ -155,10 +185,18 @@ function renderCategoryOptions() {
     .join("");
 
   $("searchCategory").innerHTML = `<option value="">All categories</option>${categoryOptions}`;
-  $("productCategory").innerHTML = categoryOptions || `<option value="">Create a category first</option>`;
+
+  if (categoryOptions) {
+    $("productCategory").disabled = false;
+    $("productCategory").innerHTML = categoryOptions;
+  } else {
+    $("productCategory").disabled = true;
+    $("productCategory").innerHTML = `<option value="">Create category first</option>`;
+  }
 }
 
 async function loadProducts() {
+  const loading = $("catalogLoading");
   const params = new URLSearchParams();
   const name = $("searchName").value.trim();
   const brand = $("searchBrand").value.trim();
@@ -169,45 +207,65 @@ async function loadProducts() {
   if (brand) params.set("brand", brand);
   if (categoryId) params.set("categoryId", categoryId);
   params.set("page", "0");
-  params.set("size", "50");
+  params.set("size", "60");
   params.set("sort", sort);
 
-  const page = await api(`/api/products?${params.toString()}`);
-  state.products = pageContent(page);
-  renderProducts();
+  loading.classList.remove("hidden");
+
+  try {
+    const page = await api(`/api/products?${params.toString()}`);
+    state.products = pageContent(page);
+    renderProducts();
+    updateMetrics();
+  } finally {
+    loading.classList.add("hidden");
+  }
 }
 
 function renderProducts() {
   const grid = $("productGrid");
   const empty = $("emptyProducts");
 
+  if (!grid || !empty) return;
+
   empty.classList.toggle("hidden", state.products.length > 0);
 
   grid.innerHTML = state.products
     .map((product) => {
+      const firstLetter = escapeHtml(product.name?.charAt(0) || "P");
       const image = product.imageUrl
         ? `<img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" onerror="this.remove()">`
-        : escapeHtml(product.name?.charAt(0) || "P");
+        : "";
+      const lowStock = Number(product.stock) <= 3;
       const disabled = product.stock < 1 ? "disabled" : "";
+      const adminDelete = state.user?.role === "ADMIN"
+        ? `<button class="button delete-product" data-product-id="${product.id}" type="button">Delete</button>`
+        : "";
 
       return `
         <article class="product-card">
-          <div class="product-image">${image}</div>
+          <div class="product-image">
+            <span class="stock-badge ${lowStock ? "low" : ""}">${product.stock} in stock</span>
+            <span>${firstLetter}</span>
+            ${image}
+          </div>
           <div class="product-body">
             <div class="product-meta">
               <span>${escapeHtml(product.categoryName || "Category")}</span>
-              <span>•</span>
+              <span>&bull;</span>
               <span>${escapeHtml(product.brand || "No brand")}</span>
             </div>
             <h3>${escapeHtml(product.name)}</h3>
             <p>${escapeHtml(product.description || "No description available.")}</p>
             <div class="price-row">
               <span class="price">${money(product.price)}</span>
-              <span class="stock">${product.stock} in stock</span>
             </div>
-            <button class="button primary add-to-cart" data-product-id="${product.id}" ${disabled}>
-              ${product.stock < 1 ? "Out of Stock" : "Add to Cart"}
-            </button>
+            <div class="product-actions">
+              <button class="button primary add-to-cart" data-product-id="${product.id}" ${disabled}>
+                ${product.stock < 1 ? "Out of stock" : "Add to cart"}
+              </button>
+              ${adminDelete}
+            </div>
           </div>
         </article>
       `;
@@ -215,24 +273,49 @@ function renderProducts() {
     .join("");
 
   document.querySelectorAll(".add-to-cart").forEach((button) => {
-    button.addEventListener("click", () => addToCart(button.dataset.productId));
+    button.addEventListener("click", () => addToCart(Number(button.dataset.productId)));
+  });
+
+  document.querySelectorAll(".delete-product").forEach((button) => {
+    button.addEventListener("click", () => deleteProduct(Number(button.dataset.productId)));
   });
 }
 
 async function addToCart(productId) {
   if (!state.token) {
-    showToast("Please login or register before adding to cart", "error");
-    document.location.hash = "#auth";
+    showToast("Login or register before adding products to cart", "error");
+    document.location.hash = "#account";
     return;
   }
 
   try {
     state.cart = await api("/api/cart/add", {
       method: "POST",
-      body: JSON.stringify({ productId: Number(productId), quantity: 1 }),
+      body: JSON.stringify({ productId, quantity: 1 }),
     });
     renderCart(state.cart);
+    updateMetrics();
+    openCartDrawer();
     showToast("Product added to cart");
+  } catch (error) {
+    showToast(getErrorMessage(error), "error");
+  }
+}
+
+async function deleteProduct(productId) {
+  if (state.user?.role !== "ADMIN") {
+    showToast("Only admin can delete products", "error");
+    return;
+  }
+
+  const confirmed = window.confirm("Delete this product from the store?");
+  if (!confirmed) return;
+
+  try {
+    await api(`/api/admin/products/${productId}`, { method: "DELETE" });
+    showToast("Product deleted");
+    await loadProducts();
+    await loadCart();
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -241,12 +324,14 @@ async function addToCart(productId) {
 async function loadCart() {
   if (!state.token) {
     renderCart(null);
+    updateMetrics();
     return;
   }
 
   try {
     state.cart = await api("/api/cart");
     renderCart(state.cart);
+    updateMetrics();
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -260,43 +345,43 @@ function renderCart(cart) {
   total.textContent = money(cart?.total || 0);
 
   if (!state.token) {
-    container.innerHTML = `<div class="empty">Login or register to use the cart.</div>`;
+    container.innerHTML = `<div class="empty-state"><strong>Login required</strong><span>Login or register to start shopping.</span></div>`;
     return;
   }
 
-  if (items.length === 0) {
-    container.innerHTML = `<div class="empty">Your cart is empty.</div>`;
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state"><strong>Your cart is empty</strong><span>Add products from the catalog.</span></div>`;
     return;
   }
 
   container.innerHTML = items
     .map(
       (item) => `
-        <div class="cart-line">
+        <article class="cart-line">
           <div>
             <h3>${escapeHtml(item.productName)}</h3>
-            <div class="product-meta">
+            <div class="cart-meta">
               <span>${money(item.unitPrice)} each</span>
-              <span>•</span>
+              <span>&bull;</span>
               <span>Subtotal ${money(item.subtotal)}</span>
             </div>
           </div>
           <div class="cart-actions">
-            <input id="qty-${item.id}" type="number" min="1" value="${item.quantity}">
+            <input id="qty-${item.id}" type="number" min="1" value="${item.quantity}" aria-label="Quantity">
             <button class="button ghost update-cart-item" data-item-id="${item.id}" type="button">Update</button>
             <button class="button danger remove-cart-item" data-item-id="${item.id}" type="button">Remove</button>
           </div>
-        </div>
+        </article>
       `
     )
     .join("");
 
   document.querySelectorAll(".update-cart-item").forEach((button) => {
-    button.addEventListener("click", () => updateCartItem(button.dataset.itemId));
+    button.addEventListener("click", () => updateCartItem(Number(button.dataset.itemId)));
   });
 
   document.querySelectorAll(".remove-cart-item").forEach((button) => {
-    button.addEventListener("click", () => removeCartItem(button.dataset.itemId));
+    button.addEventListener("click", () => removeCartItem(Number(button.dataset.itemId)));
   });
 }
 
@@ -308,6 +393,7 @@ async function updateCartItem(itemId) {
       body: JSON.stringify({ quantity }),
     });
     renderCart(state.cart);
+    updateMetrics();
     showToast("Cart updated");
   } catch (error) {
     showToast(getErrorMessage(error), "error");
@@ -318,6 +404,7 @@ async function removeCartItem(itemId) {
   try {
     state.cart = await api(`/api/cart/items/${itemId}`, { method: "DELETE" });
     renderCart(state.cart);
+    updateMetrics();
     showToast("Item removed from cart");
   } catch (error) {
     showToast(getErrorMessage(error), "error");
@@ -328,7 +415,7 @@ async function placeOrder(event) {
   event.preventDefault();
 
   if (!state.token) {
-    showToast("Please login before placing an order", "error");
+    showToast("Login before placing an order", "error");
     return;
   }
 
@@ -340,10 +427,13 @@ async function placeOrder(event) {
         paymentMethod: $("paymentMethod").value,
       }),
     });
+
     showToast(`Order #${order.id} placed successfully`);
-    await loadCart();
-    await loadOrders();
-    await loadProducts();
+    closeCartDrawer();
+    await Promise.all([loadCart(), loadOrders(), loadProducts()]);
+    if (state.user?.role === "ADMIN") {
+      await loadAdminOrders();
+    }
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -351,13 +441,17 @@ async function placeOrder(event) {
 
 async function loadOrders() {
   if (!state.token) {
+    state.orders = [];
     renderOrders([]);
+    updateMetrics();
     return;
   }
 
   try {
     const page = await api("/api/orders/user?page=0&size=20&sort=createdAt,desc");
-    renderOrders(pageContent(page));
+    state.orders = pageContent(page);
+    renderOrders(state.orders);
+    updateMetrics();
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -367,21 +461,21 @@ function renderOrders(orders) {
   const container = $("ordersList");
 
   if (!state.token) {
-    container.innerHTML = `<div class="empty">Login to see order history.</div>`;
+    container.innerHTML = `<div class="empty-state"><strong>No session</strong><span>Login to view order history.</span></div>`;
     return;
   }
 
   if (!orders.length) {
-    container.innerHTML = `<div class="empty">No orders yet.</div>`;
+    container.innerHTML = `<div class="empty-state"><strong>No orders yet</strong><span>Place an order from your cart.</span></div>`;
     return;
   }
 
-  container.innerHTML = orders.map(renderOrderCard).join("");
+  container.innerHTML = orders.map((order) => renderOrderCard(order)).join("");
 }
 
 function renderOrderCard(order, admin = false) {
   const items = (order.items || [])
-    .map((item) => `<li>${escapeHtml(item.productName)} × ${item.quantity} — ${money(item.subtotal)}</li>`)
+    .map((item) => `<li>${escapeHtml(item.productName)} x ${item.quantity} - ${money(item.subtotal)}</li>`)
     .join("");
   const payment = order.payment
     ? `${order.payment.method} / ${order.payment.status}`
@@ -392,17 +486,20 @@ function renderOrderCard(order, admin = false) {
     <article class="order-card">
       <div class="order-header">
         <h3>Order #${order.id}</h3>
-        <span class="badge muted">${escapeHtml(order.status)}</span>
+        <span class="order-status">${escapeHtml(order.status)}</span>
       </div>
       <ul class="order-items">${items}</ul>
       <div class="order-footer">
-        <div>
-          <strong>${money(order.totalAmount)}</strong><br>
-          <small>${escapeHtml(payment)} · ${escapeHtml(createdAt)}</small><br>
-          <small>${escapeHtml(order.shippingAddress)}</small>
+        <div class="order-meta">
+          <span>${money(order.totalAmount)}</span>
+          <span>&bull;</span>
+          <span>${escapeHtml(payment)}</span>
+          <span>&bull;</span>
+          <span>${escapeHtml(createdAt)}</span>
         </div>
         ${admin ? renderAdminStatusControls(order) : ""}
       </div>
+      <small>${escapeHtml(order.shippingAddress)}</small>
     </article>
   `;
 }
@@ -414,7 +511,7 @@ function renderAdminStatusControls(order) {
 
   return `
     <div class="admin-order-actions">
-      <select id="status-${order.id}">${options}</select>
+      <select id="status-${order.id}" aria-label="Order status">${options}</select>
       <button class="button primary update-order-status" data-order-id="${order.id}" type="button">Update</button>
     </div>
   `;
@@ -422,13 +519,15 @@ function renderAdminStatusControls(order) {
 
 async function loadAdminOrders() {
   if (state.user?.role !== "ADMIN") {
+    state.adminOrders = [];
     renderAdminOrders([]);
     return;
   }
 
   try {
     const page = await api("/api/admin/orders?page=0&size=30&sort=createdAt,desc");
-    renderAdminOrders(pageContent(page));
+    state.adminOrders = pageContent(page);
+    renderAdminOrders(state.adminOrders);
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -443,14 +542,14 @@ function renderAdminOrders(orders) {
   }
 
   if (!orders.length) {
-    container.innerHTML = `<div class="empty">No orders yet.</div>`;
+    container.innerHTML = `<div class="empty-state"><strong>No orders yet</strong><span>Customer orders will appear here.</span></div>`;
     return;
   }
 
   container.innerHTML = orders.map((order) => renderOrderCard(order, true)).join("");
 
   document.querySelectorAll(".update-order-status").forEach((button) => {
-    button.addEventListener("click", () => updateOrderStatus(button.dataset.orderId));
+    button.addEventListener("click", () => updateOrderStatus(Number(button.dataset.orderId)));
   });
 }
 
@@ -462,8 +561,7 @@ async function updateOrderStatus(orderId) {
       body: JSON.stringify({ status }),
     });
     showToast(`Order #${orderId} updated`);
-    await loadAdminOrders();
-    await loadOrders();
+    await Promise.all([loadAdminOrders(), loadOrders(), loadProducts()]);
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -491,6 +589,11 @@ async function createCategory(event) {
 async function createProduct(event) {
   event.preventDefault();
 
+  if (!$("productCategory").value) {
+    showToast("Create a category before adding products", "error");
+    return;
+  }
+
   try {
     await api("/api/admin/products", {
       method: "POST",
@@ -505,8 +608,10 @@ async function createProduct(event) {
       }),
     });
     $("productForm").reset();
+    renderCategoryOptions();
     await loadProducts();
     showToast("Product created");
+    document.location.hash = "#catalog";
   } catch (error) {
     showToast(getErrorMessage(error), "error");
   }
@@ -552,18 +657,52 @@ async function register(event) {
 }
 
 async function afterAuthRefresh() {
-  await loadCart();
-  await loadOrders();
-  await loadAdminOrders();
+  await Promise.all([loadCart(), loadOrders(), loadAdminOrders()]);
+}
+
+function openCartDrawer() {
+  $("cartDrawer").classList.add("open");
+  $("cartDrawer").setAttribute("aria-hidden", "false");
+  document.body.classList.add("drawer-open");
+}
+
+function closeCartDrawer() {
+  $("cartDrawer").classList.remove("open");
+  $("cartDrawer").setAttribute("aria-hidden", "true");
+  document.body.classList.remove("drawer-open");
+}
+
+function clearFilters() {
+  $("searchName").value = "";
+  $("searchBrand").value = "";
+  $("searchCategory").value = "";
+  $("sortProducts").value = "createdAt,desc";
+  loadProducts().catch((error) => showToast(getErrorMessage(error), "error"));
+}
+
+function fillDemoRegister() {
+  const stamp = Date.now();
+  $("registerName").value = "Demo User";
+  $("registerEmail").value = `user${stamp}@example.com`;
+  $("registerPassword").value = "User@1234";
+}
+
+function fillAdminLogin() {
+  $("loginEmail").value = "admin@shopease.com";
+  $("loginPassword").value = "Admin@123";
+  document.location.hash = "#account";
 }
 
 function bindEvents() {
   $("loginForm").addEventListener("submit", login);
   $("registerForm").addEventListener("submit", register);
-  $("logoutButton").addEventListener("click", () => {
-    clearSession();
-    showToast("Logged out");
-  });
+  $("logoutButton").addEventListener("click", () => clearSession(true));
+  $("fillDemoRegister").addEventListener("click", fillDemoRegister);
+  $("fillAdminLogin").addEventListener("click", fillAdminLogin);
+
+  $("openCartDrawer").addEventListener("click", openCartDrawer);
+  $("closeCartDrawer").addEventListener("click", closeCartDrawer);
+  $("cartBackdrop").addEventListener("click", closeCartDrawer);
 
   $("productSearchForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -574,6 +713,7 @@ function bindEvents() {
     }
   });
 
+  $("clearFilters").addEventListener("click", clearFilters);
   $("refreshProducts").addEventListener("click", () => loadProducts().catch((error) => showToast(getErrorMessage(error), "error")));
   $("refreshCart").addEventListener("click", loadCart);
   $("refreshOrders").addEventListener("click", loadOrders);
@@ -589,6 +729,8 @@ async function init() {
   updateSessionUi();
   renderCart(null);
   renderOrders([]);
+  renderAdminOrders([]);
+  updateMetrics();
 
   await checkHealth();
 

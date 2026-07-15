@@ -3,253 +3,316 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShopEase</title>
+  <title>ShopEase Storefront</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="hero">
-    <nav class="nav">
-      <div class="brand">
-        <span class="logo">S</span>
-        <div>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="ShopEase home">
+        <span class="logo">SE</span>
+        <span>
           <strong>ShopEase</strong>
-          <small>Spring Boot E-commerce</small>
-        </div>
-      </div>
-      <div class="nav-links">
-        <a href="#products">Products</a>
-        <a href="#cart">Cart</a>
+          <small>Interactive store</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#catalog">Catalog</a>
         <a href="#orders">Orders</a>
-        <a href="/swagger-ui/index.html" target="_blank">Swagger</a>
+        <a href="#adminPanel" id="adminNavLink" class="hidden">Admin</a>
+        <a href="/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger</a>
+      </nav>
+
+      <div class="top-actions">
+        <span id="sessionBadge" class="pill neutral">Guest</span>
+        <button id="openCartDrawer" class="icon-button" type="button" aria-label="Open cart">
+          Cart <span id="cartBadge">0</span>
+        </button>
       </div>
-    </nav>
+    </header>
 
-    <section class="hero-content">
-      <div>
-        <p class="eyebrow">Interactive Frontend Connected to REST API</p>
-        <h1>Browse, add to cart, place orders, and manage products.</h1>
-        <p class="hero-copy">
-          This page talks directly to your Spring Boot backend using JWT authentication.
-          Login as admin to add products, or register as a user to shop.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="#products">Start Shopping</a>
-          <a class="button ghost" href="#auth">Login / Register</a>
-        </div>
-      </div>
-      <div class="hero-card">
-        <span>Backend status</span>
-        <strong id="apiStatus">Checking...</strong>
-        <small id="apiStatusHint">Calling /actuator/health</small>
-      </div>
-    </section>
-  </header>
-
-  <main class="container">
-    <section id="auth" class="grid two">
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Account</p>
-            <h2>Login</h2>
-          </div>
-          <span id="sessionBadge" class="badge muted">Guest</span>
-        </div>
-        <form id="loginForm" class="stack">
-          <label>
-            Email
-            <input id="loginEmail" type="email" value="admin@shopease.com" required>
-          </label>
-          <label>
-            Password
-            <input id="loginPassword" type="password" value="Admin@123" required>
-          </label>
-          <button class="button primary" type="submit">Login</button>
-        </form>
-        <div id="currentUser" class="current-user hidden"></div>
-        <button id="logoutButton" class="button danger hidden" type="button">Logout</button>
-      </article>
-
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">New customer</p>
-            <h2>Register</h2>
+    <main>
+      <section id="home" class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Spring Boot + JWT + Interactive UI</p>
+          <h1>Run the full shopping flow from one clean browser page.</h1>
+          <p>
+            Login, browse products, search by category or brand, add items to cart,
+            place orders, and manage admin tasks without touching Swagger.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#catalog">Explore products</a>
+            <a class="button secondary" href="#account">Login or register</a>
           </div>
         </div>
-        <form id="registerForm" class="stack">
-          <label>
-            Name
-            <input id="registerName" type="text" value="Demo User" required>
-          </label>
-          <label>
-            Email
-            <input id="registerEmail" type="email" value="user@example.com" required>
-          </label>
-          <label>
-            Password
-            <input id="registerPassword" type="password" value="User@1234" minlength="8" required>
-          </label>
-          <button class="button secondary" type="submit">Create User Account</button>
-        </form>
-      </article>
-    </section>
 
-    <section id="products" class="card">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Store</p>
-          <h2>Products</h2>
-        </div>
-        <button id="refreshProducts" class="button ghost" type="button">Refresh</button>
-      </div>
-
-      <form id="productSearchForm" class="filters">
-        <input id="searchName" type="search" placeholder="Search by product name">
-        <input id="searchBrand" type="search" placeholder="Search by brand">
-        <select id="searchCategory">
-          <option value="">All categories</option>
-        </select>
-        <select id="sortProducts">
-          <option value="createdAt,desc">Newest first</option>
-          <option value="price,asc">Price low to high</option>
-          <option value="price,desc">Price high to low</option>
-          <option value="name,asc">Name A-Z</option>
-        </select>
-        <button class="button primary" type="submit">Search</button>
-      </form>
-
-      <div id="productGrid" class="product-grid"></div>
-      <div id="emptyProducts" class="empty hidden">No products found. Login as admin and create one.</div>
-    </section>
-
-    <section id="cart" class="grid two">
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Cart</p>
-            <h2>Your Cart</h2>
+        <aside class="hero-panel">
+          <div class="status-card">
+            <span class="status-dot" id="apiStatusDot"></span>
+            <div>
+              <small>Backend API</small>
+              <strong id="apiStatus">Checking...</strong>
+              <span id="apiStatusHint">Calling /actuator/health</span>
+            </div>
           </div>
-          <button id="refreshCart" class="button ghost" type="button">Refresh</button>
-        </div>
-        <div id="cartItems" class="stack"></div>
-        <div class="cart-total">
-          <span>Total</span>
-          <strong id="cartTotal">₹0</strong>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Checkout</p>
-            <h2>Place Order</h2>
+          <div class="demo-box">
+            <strong>Quick demo</strong>
+            <p>Use admin to create products, then register as a user to shop.</p>
+            <button id="fillAdminLogin" class="button ghost" type="button">Fill admin login</button>
           </div>
-        </div>
-        <form id="orderForm" class="stack">
-          <label>
-            Shipping Address
-            <textarea id="shippingAddress" rows="4" required>123 Demo Street, Mumbai, India</textarea>
-          </label>
-          <label>
-            Payment Method
-            <select id="paymentMethod">
-              <option value="COD">Cash on Delivery</option>
-              <option value="CARD">Card</option>
-              <option value="UPI">UPI</option>
-            </select>
-          </label>
-          <button class="button primary" type="submit">Place Order</button>
-        </form>
-      </article>
-    </section>
+        </aside>
+      </section>
 
-    <section id="orders" class="card">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Orders</p>
-          <h2>Order History</h2>
-        </div>
-        <button id="refreshOrders" class="button ghost" type="button">Refresh</button>
-      </div>
-      <div id="ordersList" class="orders-list"></div>
-    </section>
+      <section class="metrics-grid" aria-label="Dashboard stats">
+        <article class="metric-card">
+          <span>Products</span>
+          <strong id="productCount">0</strong>
+          <small>Public catalog items</small>
+        </article>
+        <article class="metric-card">
+          <span>Categories</span>
+          <strong id="categoryCount">0</strong>
+          <small>Available departments</small>
+        </article>
+        <article class="metric-card">
+          <span>Cart items</span>
+          <strong id="cartCount">0</strong>
+          <small>Current session cart</small>
+        </article>
+        <article class="metric-card">
+          <span>Orders</span>
+          <strong id="orderCount">0</strong>
+          <small>Your order history</small>
+        </article>
+      </section>
 
-    <section id="adminPanel" class="admin-grid hidden">
-      <article class="card admin-card">
-        <div class="section-title">
+      <section id="account" class="panel-grid">
+        <article class="glass-card account-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Account</p>
+              <h2>Login</h2>
+            </div>
+          </div>
+
+          <form id="loginForm" class="form-grid single">
+            <label>
+              Email
+              <input id="loginEmail" type="email" value="admin@shopease.com" autocomplete="email" required>
+            </label>
+            <label>
+              Password
+              <input id="loginPassword" type="password" value="Admin@123" autocomplete="current-password" required>
+            </label>
+            <button class="button primary" type="submit">Login</button>
+          </form>
+
+          <div id="currentUser" class="current-user hidden"></div>
+          <button id="logoutButton" class="button danger hidden" type="button">Logout</button>
+        </article>
+
+        <article class="glass-card account-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">New customer</p>
+              <h2>Register</h2>
+            </div>
+            <button id="fillDemoRegister" class="chip" type="button">Demo data</button>
+          </div>
+
+          <form id="registerForm" class="form-grid single">
+            <label>
+              Name
+              <input id="registerName" type="text" value="Demo User" autocomplete="name" required>
+            </label>
+            <label>
+              Email
+              <input id="registerEmail" type="email" value="user@example.com" autocomplete="email" required>
+            </label>
+            <label>
+              Password
+              <input id="registerPassword" type="password" value="User@1234" minlength="8" autocomplete="new-password" required>
+            </label>
+            <button class="button secondary" type="submit">Create account</button>
+          </form>
+        </article>
+      </section>
+
+      <section id="catalog" class="glass-card catalog-panel">
+        <div class="section-heading">
           <div>
-            <p class="eyebrow">Admin</p>
-            <h2>Create Category</h2>
+            <p class="eyebrow">Storefront</p>
+            <h2>Product catalog</h2>
+          </div>
+          <div class="heading-actions">
+            <button id="clearFilters" class="button ghost" type="button">Clear filters</button>
+            <button id="refreshProducts" class="button ghost" type="button">Refresh</button>
           </div>
         </div>
-        <form id="categoryForm" class="stack">
-          <label>
-            Category Name
-            <input id="categoryName" type="text" placeholder="Electronics" required>
-          </label>
-          <label>
-            Description
-            <textarea id="categoryDescription" rows="3" placeholder="Electronic products and gadgets"></textarea>
-          </label>
-          <button class="button primary" type="submit">Add Category</button>
-        </form>
-      </article>
 
-      <article class="card admin-card">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Admin</p>
-            <h2>Create Product</h2>
-          </div>
-        </div>
-        <form id="productForm" class="product-form">
-          <label>
-            Product Name
-            <input id="productName" type="text" placeholder="iPhone 15" required>
+        <form id="productSearchForm" class="search-bar">
+          <label class="search-field">
+            <span>Product</span>
+            <input id="searchName" type="search" placeholder="Search phones, shoes, watches...">
           </label>
           <label>
             Brand
-            <input id="productBrand" type="text" placeholder="Apple">
-          </label>
-          <label>
-            Price
-            <input id="productPrice" type="number" min="1" step="0.01" placeholder="79999" required>
-          </label>
-          <label>
-            Stock
-            <input id="productStock" type="number" min="0" step="1" placeholder="10" required>
+            <input id="searchBrand" type="search" placeholder="Apple, Nike, Sony">
           </label>
           <label>
             Category
-            <select id="productCategory" required></select>
+            <select id="searchCategory">
+              <option value="">All categories</option>
+            </select>
           </label>
           <label>
-            Image URL
-            <input id="productImageUrl" type="url" placeholder="https://example.com/product.jpg">
+            Sort
+            <select id="sortProducts">
+              <option value="createdAt,desc">Newest first</option>
+              <option value="price,asc">Price low to high</option>
+              <option value="price,desc">Price high to low</option>
+              <option value="name,asc">Name A-Z</option>
+            </select>
           </label>
-          <label class="full">
-            Description
-            <textarea id="productDescription" rows="3" placeholder="Product details"></textarea>
-          </label>
-          <button class="button primary full" type="submit">Add Product</button>
+          <button class="button primary" type="submit">Search</button>
         </form>
-      </article>
 
-      <article class="card admin-card full-width">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Admin</p>
-            <h2>Manage Orders</h2>
-          </div>
-          <button id="refreshAdminOrders" class="button ghost" type="button">Refresh</button>
+        <div id="catalogLoading" class="loading-row hidden">
+          <span class="spinner"></span>
+          Loading products...
         </div>
-        <div id="adminOrdersList" class="orders-list"></div>
-      </article>
-    </section>
-  </main>
+        <div id="productGrid" class="product-grid"></div>
+        <div id="emptyProducts" class="empty-state hidden">
+          <strong>No products found</strong>
+          <span>Login as admin, create a category, then add your first product.</span>
+        </div>
+      </section>
 
-  <div id="toast" class="toast hidden"></div>
+      <section id="orders" class="glass-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Shopping history</p>
+            <h2>Your orders</h2>
+          </div>
+          <button id="refreshOrders" class="button ghost" type="button">Refresh orders</button>
+        </div>
+        <div id="ordersList" class="orders-list"></div>
+      </section>
+
+      <section id="adminPanel" class="admin-panel hidden">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Admin studio</p>
+            <h2>Manage your store</h2>
+          </div>
+          <span class="pill admin">ADMIN ACCESS</span>
+        </div>
+
+        <div class="admin-grid">
+          <article class="glass-card admin-card">
+            <h3>Create category</h3>
+            <form id="categoryForm" class="form-grid single">
+              <label>
+                Category name
+                <input id="categoryName" type="text" placeholder="Electronics" required>
+              </label>
+              <label>
+                Description
+                <textarea id="categoryDescription" rows="3" placeholder="Electronic products and gadgets"></textarea>
+              </label>
+              <button class="button primary" type="submit">Add category</button>
+            </form>
+          </article>
+
+          <article class="glass-card admin-card wide">
+            <h3>Create product</h3>
+            <form id="productForm" class="form-grid product-form">
+              <label>
+                Product name
+                <input id="productName" type="text" placeholder="iPhone 15" required>
+              </label>
+              <label>
+                Brand
+                <input id="productBrand" type="text" placeholder="Apple">
+              </label>
+              <label>
+                Price
+                <input id="productPrice" type="number" min="1" step="0.01" placeholder="79999" required>
+              </label>
+              <label>
+                Stock
+                <input id="productStock" type="number" min="0" step="1" placeholder="10" required>
+              </label>
+              <label>
+                Category
+                <select id="productCategory" required></select>
+              </label>
+              <label>
+                Image URL
+                <input id="productImageUrl" type="url" placeholder="https://example.com/product.jpg">
+              </label>
+              <label class="full">
+                Description
+                <textarea id="productDescription" rows="3" placeholder="Product details"></textarea>
+              </label>
+              <button class="button primary full" type="submit">Add product</button>
+            </form>
+          </article>
+
+          <article class="glass-card admin-card full">
+            <div class="section-heading compact">
+              <div>
+                <h3>Admin product actions</h3>
+                <p>Delete products directly from the catalog cards when logged in as admin.</p>
+              </div>
+              <button id="refreshAdminOrders" class="button ghost" type="button">Refresh admin orders</button>
+            </div>
+            <div id="adminOrdersList" class="orders-list"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside id="cartDrawer" class="cart-drawer" aria-hidden="true">
+    <div class="drawer-backdrop" id="cartBackdrop"></div>
+    <section class="drawer-panel" aria-label="Shopping cart">
+      <div class="drawer-header">
+        <div>
+          <p class="eyebrow">Checkout</p>
+          <h2>Your cart</h2>
+        </div>
+        <button id="closeCartDrawer" class="icon-only" type="button" aria-label="Close cart">&times;</button>
+      </div>
+
+      <button id="refreshCart" class="button ghost full-button" type="button">Refresh cart</button>
+      <div id="cartItems" class="cart-items"></div>
+
+      <div class="cart-summary">
+        <span>Total</span>
+        <strong id="cartTotal">INR 0</strong>
+      </div>
+
+      <form id="orderForm" class="form-grid single checkout-form">
+        <label>
+          Shipping address
+          <textarea id="shippingAddress" rows="4" required>123 Demo Street, Mumbai, India</textarea>
+        </label>
+        <label>
+          Payment method
+          <select id="paymentMethod">
+            <option value="COD">Cash on Delivery</option>
+            <option value="CARD">Card</option>
+            <option value="UPI">UPI</option>
+          </select>
+        </label>
+        <button class="button primary" type="submit">Place order</button>
+      </form>
+    </section>
+  </aside>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <script src="/app.js"></script>
 </body>
