@@ -1,113 +1,108 @@
 # ShopEase Backend API
 
-ShopEase is a complete e-commerce backend project built with Java, Spring Boot, Spring Security, JWT, Spring Data JPA, Hibernate, Swagger/OpenAPI, H2/MySQL, and Docker.
+ShopEase is a full-stack e-commerce project built with a Spring Boot backend and an interactive browser UI served from the same application.
 
-It provides APIs for user registration/login, product browsing, product search, category management, cart management, order placement, payment records, and admin product/order management.
+It demonstrates real backend concepts such as REST APIs, CRUD operations, JWT authentication, role-based authorization, database relationships, cart management, order placement, admin product management, Swagger documentation, Docker support, and cloud deployment configuration.
 
-## 1. Project overview
+## Project at a glance
 
-This project is designed like a real online shopping backend.
+| Item | Details |
+|---|---|
+| Project type | E-commerce backend with integrated frontend UI |
+| Backend | Java 17, Spring Boot 3, Spring Security, Spring Data JPA |
+| Frontend | HTML, CSS, JavaScript served from Spring Boot |
+| Authentication | JWT bearer token |
+| Roles | `USER`, `ADMIN` |
+| Local database | H2 in-memory database |
+| Optional database | MySQL using Docker Compose |
+| API docs | Swagger/OpenAPI |
+| Deployment | Docker + Render Blueprint |
+| Repository | `Dinesh12328/shopease-backend-api` |
 
-- Customers can register, login, browse products, add products to cart, and place orders.
-- Admins can login, create categories, add products, update products, delete products, upload product images, and manage order status.
-- JWT authentication protects private APIs.
-- Role-based authorization separates `USER` and `ADMIN` access.
-- Swagger UI is included for easy browser-based API testing.
-- The default local database is H2, so you can run the project immediately without installing MySQL.
-- MySQL and Docker Compose are included for a more production-style setup.
+## Main features
 
-## 2. Main technologies
+### User features
+
+- Register a new user
+- Login and receive JWT token
+- Browse product catalog
+- Search products by name, brand, and category
+- Sort products by price, name, and newest
+- Add products to cart
+- Update cart item quantity
+- Remove cart items
+- Place orders
+- View order history
+
+### Admin features
+
+- Login as admin
+- Create product categories
+- Create products
+- Delete products
+- Upload product image URL
+- View all orders
+- Update order status
+
+### Frontend UI features
+
+- Interactive storefront at `/`
+- Dashboard counters for products, categories, cart items, and orders
+- Login/register forms
+- Product catalog cards
+- Search, filter, and sorting controls
+- Cart drawer
+- Checkout form
+- Order history cards
+- Admin studio
+- Toast success/error messages
+- Responsive layout for desktop and mobile
+
+## Tech stack
 
 - Java 17
 - Spring Boot 3
 - Spring Web
 - Spring Security
-- JWT authentication
+- JWT
 - Spring Data JPA
 - Hibernate
-- H2 database for local testing
-- MySQL for Docker or production-style running
-- Swagger/OpenAPI
+- H2 database
+- MySQL
 - Maven
-- Docker and Docker Compose
+- Swagger/OpenAPI
+- Docker
+- Docker Compose
+- Render deployment config
+- HTML, CSS, JavaScript
 
-## 3. Main modules
-
-```text
-Auth module       -> register, login, JWT token generation
-User module       -> user records and role handling
-Category module   -> product categories
-Product module    -> product CRUD, search, pagination, sorting, image URL
-Cart module       -> user cart and cart items
-Order module      -> place orders and view order history
-Payment module    -> COD/CARD/UPI payment record simulation
-Admin module      -> admin-only product, category, and order management
-Security module   -> JWT filter, role authorization, password encryption
-```
-
-## 4. How the project works internally
-
-The request flow is:
+## Project architecture
 
 ```text
-Browser / Swagger / Postman
-        |
-        v
-Controller
-        |
-        v
-Service
-        |
-        v
-Repository
-        |
-        v
-Database
+Browser / Frontend / Swagger / Postman
+              |
+              v
+        Controller layer
+              |
+              v
+         Service layer
+              |
+              v
+       Repository layer
+              |
+              v
+          Database
 ```
 
-Example: placing an order
-
-```text
-User logs in
-  -> receives JWT token
-  -> adds product to cart
-  -> places order
-  -> app checks stock
-  -> app creates order and order items
-  -> app creates payment record
-  -> app reduces product stock
-  -> user can see order history
-```
-
-## 5. Important database entities
-
-- `User`
-- `Product`
-- `Category`
-- `Cart`
-- `CartItem`
-- `Order`
-- `OrderItem`
-- `Payment`
-
-Relationships:
-
-- One user has one cart.
-- One cart has many cart items.
-- One product belongs to one category.
-- One order belongs to one user.
-- One order has many order items.
-- One order has one payment record.
-
-## 6. Project folder structure
+### Package structure
 
 ```text
 src/main/java/com/shopease
-  config       -> Spring Security, Swagger, web config, default admin setup
+  config       -> security, Swagger, web config, default admin setup
   controller   -> REST API controllers
-  dto          -> request/response objects
-  entity       -> JPA database entities
-  exception    -> global error handling
+  dto          -> request and response DTOs
+  entity       -> JPA entities
+  exception    -> global exception handling
   repository   -> Spring Data JPA repositories
   security     -> JWT service and JWT filter
   service      -> business logic
@@ -128,20 +123,42 @@ pom.xml
 README.md
 ```
 
-## 7. Default local credentials
+## Important entities
 
-When the application starts, it automatically creates one admin account if it does not already exist.
+- `User`
+- `Product`
+- `Category`
+- `Cart`
+- `CartItem`
+- `Order`
+- `OrderItem`
+- `Payment`
+
+### Entity relationships
 
 ```text
-Admin email:    admin@shopease.com
-Admin password: Admin@123
+User 1 ---- 1 Cart
+Cart 1 ---- * CartItem
+Product * ---- 1 Category
+User 1 ---- * Order
+Order 1 ---- * OrderItem
+Order 1 ---- 1 Payment
 ```
 
-For customer testing, create a new user through the register API.
+## Default local admin account
 
-## 8. Required software
+When the application starts, it creates a default admin user if one does not already exist.
 
-Install these before running the project:
+```text
+Email:    admin@shopease.com
+Password: Admin@123
+```
+
+Use this only for local development. For online deployment, set a private admin password in the deployment environment.
+
+## Requirements
+
+Install these before running locally:
 
 1. Java 17 or newer
 2. IntelliJ IDEA
@@ -149,80 +166,71 @@ Install these before running the project:
 
 Optional:
 
-4. Docker Desktop, only if you want to run with MySQL using Docker
-5. Postman, only if you prefer Postman instead of Swagger
+4. Docker Desktop
+5. Postman
 
-## 9. Run the project in IntelliJ IDEA
-
-Use these exact steps:
+## Run locally with IntelliJ IDEA
 
 1. Open IntelliJ IDEA.
 2. Click `File` -> `Open`.
 3. Select the project folder:
 
    ```text
-   shopease-backend-api-project-type
+   1-shopease-backend-api-project-type
    ```
 
-4. Wait for IntelliJ to load Maven dependencies.
-5. Make sure the selected JDK is Java 17 or newer:
+4. Wait for Maven dependencies to load.
+5. Make sure Java 17 or newer is selected:
 
    ```text
-   File -> Project Structure -> Project SDK -> Java 17+
+   File -> Project Structure -> Project SDK
    ```
 
-6. Open this file:
+6. Open:
 
    ```text
    src/main/java/com/shopease/ShopEaseApplication.java
    ```
 
-7. Click the green run button near `public static void main`.
-8. Wait until the IntelliJ console shows something like:
+7. Click the green run button.
+8. Wait for this message:
 
    ```text
-   Tomcat started on port 8080
    Started ShopEaseApplication
    ```
 
-9. Keep IntelliJ running. Do not stop the application while testing APIs.
+9. Open the frontend:
 
-## 10. Run the project from terminal
+   ```text
+   http://127.0.0.1:8080/
+   ```
 
-From the project root folder, run:
+## Run locally from terminal
+
+From the project root:
 
 ```bash
 mvn spring-boot:run
 ```
 
-Or build a jar:
+Or build and run the JAR:
 
 ```bash
 mvn clean package
-```
-
-Then run:
-
-```bash
 java -jar target/shopease-api-1.0.0.jar
 ```
 
-## 11. Important local URLs
-
-Open these in your normal system browser such as Chrome, Edge, or Firefox.
-
-If the Codex in-app browser blocks localhost, use your real browser instead.
+## Important local URLs
 
 | Purpose | URL |
 |---|---|
-| Interactive frontend UI | `http://127.0.0.1:8080/` |
+| Frontend UI | `http://127.0.0.1:8080/` |
 | Swagger UI | `http://127.0.0.1:8080/swagger-ui/index.html` |
-| Swagger UI alternate | `http://localhost:8080/swagger-ui.html` |
 | Health check | `http://127.0.0.1:8080/actuator/health` |
 | OpenAPI JSON | `http://127.0.0.1:8080/v3/api-docs` |
-| H2 database console | `http://127.0.0.1:8080/h2-console` |
+| H2 console | `http://127.0.0.1:8080/h2-console` |
 
-Health check success response:
+Health check expected response:
 
 ```json
 {
@@ -230,9 +238,7 @@ Health check success response:
 }
 ```
 
-## 12. H2 database login
-
-The default local setup uses H2 in-memory database. You do not need MySQL for normal testing.
+## H2 database login
 
 Open:
 
@@ -248,13 +254,11 @@ Username: sa
 Password:
 ```
 
-Leave the password empty.
+Leave password empty.
 
-Important: because H2 is in-memory, data resets when the application stops.
+Important: H2 is an in-memory database. Data resets when the application stops.
 
-## 13. Frontend UI testing step by step
-
-The project includes a simple interactive frontend inside Spring Boot. No separate React or Node setup is required.
+## How to test the frontend UI
 
 Open:
 
@@ -262,56 +266,38 @@ Open:
 http://127.0.0.1:8080/
 ```
 
-The frontend includes:
+### Full frontend testing flow
 
-- Dashboard counters for products, categories, cart items, and orders
-- Login/register flow with JWT stored in the browser
-- Product catalog with search, category filter, brand filter, and sorting
-- Interactive cart drawer with update/remove actions
-- Checkout form for placing orders
-- Order history cards
-- Admin studio for creating categories/products and updating order status
-- Admin-only product delete action
-
-Use this flow:
-
-1. Login as admin using:
+1. Login as admin:
 
    ```text
    admin@shopease.com
    Admin@123
    ```
 
-2. Scroll to the `Admin` section.
-3. Create a category, for example `Electronics`.
-4. Create a product and select that category.
-5. The product will appear in the `Products` section.
-6. Register a normal user or login as a user.
-7. Add product to cart.
-8. Open the cart section and check the total.
-9. Enter shipping address and place order.
-10. View order history.
-11. Login again as admin to manage order status.
+2. Go to the admin section.
+3. Create a category, for example:
 
-The frontend uses these same backend APIs:
+   ```text
+   Electronics
+   ```
 
-```text
-POST /api/auth/login
-POST /api/auth/register
-GET  /api/products
-POST /api/admin/categories
-POST /api/admin/products
-POST /api/cart/add
-GET  /api/cart
-POST /api/orders/place
-GET  /api/orders/user
-GET  /api/admin/orders
-PATCH /api/admin/orders/{id}/status
-```
+4. Create a product under that category.
+5. Go to the catalog section.
+6. Search/filter/sort products.
+7. Register a normal user.
+8. Add product to cart.
+9. Open the cart drawer.
+10. Update quantity or remove item.
+11. Place order.
+12. View order history.
+13. Login again as admin.
+14. View all orders.
+15. Update order status.
 
-## 14. Swagger testing step by step
+## How to test using Swagger
 
-Open Swagger:
+Open:
 
 ```text
 http://127.0.0.1:8080/swagger-ui/index.html
@@ -319,13 +305,13 @@ http://127.0.0.1:8080/swagger-ui/index.html
 
 ### Step 1: Login as admin
 
-Open:
+Endpoint:
 
 ```text
 POST /api/auth/login
 ```
 
-Request body:
+Body:
 
 ```json
 {
@@ -334,68 +320,48 @@ Request body:
 }
 ```
 
-Click `Execute`.
-
-Copy the token from:
+Copy:
 
 ```text
 data.token
 ```
 
-### Step 2: Add JWT token in Swagger
+### Step 2: Authorize Swagger
 
-At the top/right of Swagger, click `Authorize`.
+Click `Authorize` in Swagger.
 
-Paste only the token value.
-
-If Swagger asks for bearer auth, either of these usually works:
+Paste:
 
 ```text
-eyJhbGciOiJIUzI1NiJ9...
+Bearer YOUR_TOKEN_HERE
 ```
 
-or:
+### Step 3: Create category
 
-```text
-Bearer eyJhbGciOiJIUzI1NiJ9...
-```
-
-Then click `Authorize` and close the popup.
-
-### Step 3: Create a category as admin
-
-Open:
+Endpoint:
 
 ```text
 POST /api/admin/categories
 ```
 
-Request body:
+Body:
 
 ```json
 {
   "name": "Electronics",
-  "description": "Electronic items and gadgets"
+  "description": "Electronic products and gadgets"
 }
 ```
 
-Click `Execute`.
+### Step 4: Create product
 
-Copy the returned category ID, for example:
-
-```text
-data.id = 1
-```
-
-### Step 4: Create a product as admin
-
-Open:
+Endpoint:
 
 ```text
 POST /api/admin/products
 ```
 
-Request body:
+Body:
 
 ```json
 {
@@ -409,47 +375,15 @@ Request body:
 }
 ```
 
-Click `Execute`.
+### Step 5: Register customer
 
-Copy the product ID, for example:
-
-```text
-data.id = 1
-```
-
-### Step 5: View products publicly
-
-Open:
-
-```text
-GET /api/products
-```
-
-Click `Execute`.
-
-This API is public. Login is not required.
-
-### Step 6: Search products
-
-Try these URLs in browser or Swagger:
-
-```text
-GET /api/products?name=iphone
-GET /api/products?brand=Apple
-GET /api/products?categoryId=1
-GET /api/products?page=0&size=5&sort=price,asc
-GET /api/products?page=0&size=5&sort=createdAt,desc
-```
-
-### Step 7: Register a customer
-
-Open:
+Endpoint:
 
 ```text
 POST /api/auth/register
 ```
 
-Request body:
+Body:
 
 ```json
 {
@@ -459,25 +393,17 @@ Request body:
 }
 ```
 
-Click `Execute`.
+Copy the customer token and authorize Swagger again with the customer token.
 
-Copy the customer token from:
+### Step 6: Add product to cart
 
-```text
-data.token
-```
-
-Use `Authorize` again in Swagger and replace the admin token with the customer token.
-
-### Step 8: Add product to cart
-
-Open:
+Endpoint:
 
 ```text
 POST /api/cart/add
 ```
 
-Request body:
+Body:
 
 ```json
 {
@@ -486,27 +412,15 @@ Request body:
 }
 ```
 
-Click `Execute`.
+### Step 7: Place order
 
-### Step 9: View cart
-
-Open:
-
-```text
-GET /api/cart
-```
-
-Click `Execute`.
-
-### Step 10: Place order
-
-Open:
+Endpoint:
 
 ```text
 POST /api/orders/place
 ```
 
-Request body:
+Body:
 
 ```json
 {
@@ -523,34 +437,73 @@ CARD
 UPI
 ```
 
-Click `Execute`.
+## API summary
 
-### Step 11: View customer order history
+### Auth APIs
 
-Open:
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/auth/register` | Public |
+| POST | `/api/auth/login` | Public |
+
+### Product and category APIs
+
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/products` | Public |
+| GET | `/api/products/{id}` | Public |
+| GET | `/api/categories` | Public |
+
+### Cart APIs
+
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/cart/add` | USER or ADMIN |
+| GET | `/api/cart` | USER or ADMIN |
+| PUT | `/api/cart/items/{itemId}` | USER or ADMIN |
+| DELETE | `/api/cart/items/{itemId}` | USER or ADMIN |
+| DELETE | `/api/cart` | USER or ADMIN |
+
+### Order APIs
+
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/orders/place` | USER or ADMIN |
+| GET | `/api/orders/user` | USER or ADMIN |
+| GET | `/api/orders/{id}` | USER or ADMIN |
+
+### Admin APIs
+
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/admin/categories` | ADMIN |
+| PUT | `/api/admin/categories/{id}` | ADMIN |
+| DELETE | `/api/admin/categories/{id}` | ADMIN |
+| POST | `/api/admin/products` | ADMIN |
+| PUT | `/api/admin/products/{id}` | ADMIN |
+| DELETE | `/api/admin/products/{id}` | ADMIN |
+| POST | `/api/admin/products/{id}/image` | ADMIN |
+| GET | `/api/admin/orders` | ADMIN |
+| PATCH | `/api/admin/orders/{id}/status` | ADMIN |
+
+## Product search examples
 
 ```text
-GET /api/orders/user
+GET /api/products?name=iphone
+GET /api/products?brand=Apple
+GET /api/products?categoryId=1
+GET /api/products?page=0&size=5&sort=price,asc
+GET /api/products?page=0&size=5&sort=createdAt,desc
 ```
 
-Click `Execute`.
+## Order and payment values
 
-### Step 12: Admin updates order status
-
-Authorize again with the admin token.
-
-Open:
+Allowed payment methods:
 
 ```text
-PATCH /api/admin/orders/{id}/status
-```
-
-Request body:
-
-```json
-{
-  "status": "CONFIRMED"
-}
+COD
+CARD
+UPI
 ```
 
 Allowed order statuses:
@@ -563,142 +516,13 @@ DELIVERED
 CANCELLED
 ```
 
-## 15. API list
-
-### Auth APIs
-
-| Method | URL | Access |
-|---|---|---|
-| POST | `/api/auth/register` | Public |
-| POST | `/api/auth/login` | Public |
-
-### Public product/category APIs
-
-| Method | URL | Access |
-|---|---|---|
-| GET | `/api/products` | Public |
-| GET | `/api/products/{id}` | Public |
-| GET | `/api/categories` | Public |
-
-### User cart APIs
-
-| Method | URL | Access |
-|---|---|---|
-| POST | `/api/cart/add` | USER or ADMIN |
-| GET | `/api/cart` | USER or ADMIN |
-| PUT | `/api/cart/items/{itemId}` | USER or ADMIN |
-| DELETE | `/api/cart/items/{itemId}` | USER or ADMIN |
-| DELETE | `/api/cart` | USER or ADMIN |
-
-### User order APIs
-
-| Method | URL | Access |
-|---|---|---|
-| POST | `/api/orders/place` | USER or ADMIN |
-| GET | `/api/orders/user` | USER or ADMIN |
-| GET | `/api/orders/{id}` | USER or ADMIN |
-
-### Admin APIs
-
-| Method | URL | Access |
-|---|---|---|
-| POST | `/api/admin/categories` | ADMIN |
-| PUT | `/api/admin/categories/{id}` | ADMIN |
-| DELETE | `/api/admin/categories/{id}` | ADMIN |
-| POST | `/api/admin/products` | ADMIN |
-| PUT | `/api/admin/products/{id}` | ADMIN |
-| DELETE | `/api/admin/products/{id}` | ADMIN |
-| POST | `/api/admin/products/{id}/image` | ADMIN |
-| GET | `/api/admin/orders` | ADMIN |
-| PATCH | `/api/admin/orders/{id}/status` | ADMIN |
-
-## 16. Request body examples
-
-### Register
-
-```json
-{
-  "name": "Demo User",
-  "email": "user@example.com",
-  "password": "User@1234"
-}
-```
-
-### Login
-
-```json
-{
-  "email": "admin@shopease.com",
-  "password": "Admin@123"
-}
-```
-
-### Create category
-
-```json
-{
-  "name": "Fashion",
-  "description": "Clothes and accessories"
-}
-```
-
-### Create product
-
-```json
-{
-  "name": "Running Shoes",
-  "description": "Comfortable sports shoes",
-  "price": 2499,
-  "stock": 25,
-  "brand": "Nike",
-  "categoryId": 1,
-  "imageUrl": "https://example.com/shoes.jpg"
-}
-```
-
-### Add item to cart
-
-```json
-{
-  "productId": 1,
-  "quantity": 1
-}
-```
-
-### Update cart item
-
-```json
-{
-  "quantity": 3
-}
-```
-
-### Place order
-
-```json
-{
-  "shippingAddress": "221B Baker Street, London",
-  "paymentMethod": "COD"
-}
-```
-
-### Update order status
-
-```json
-{
-  "status": "SHIPPED"
-}
-```
-
-## 17. Run tests
-
-From the project root:
+## Run tests
 
 ```bash
 mvn test
 ```
 
-Expected result:
+Expected:
 
 ```text
 BUILD SUCCESS
@@ -706,7 +530,7 @@ BUILD SUCCESS
 
 The test suite checks:
 
-- User registration and login
+- Registration and login
 - Admin login
 - Public product listing
 - Protected admin APIs
@@ -716,33 +540,25 @@ The test suite checks:
 - Order placement
 - User order history
 - Admin order status update
-- Frontend static page loading
+- Frontend page loading
 - OpenAPI docs endpoint
 - Health endpoint
 
-## 18. Run with Docker and MySQL
+## Run with Docker and MySQL
 
-Use this if you want MySQL instead of H2.
-
-Start Docker Desktop first, then run:
+Start Docker Desktop, then run:
 
 ```bash
 docker compose up --build
 ```
 
-The API will run at:
+The app runs at:
 
 ```text
-http://127.0.0.1:8080
+http://127.0.0.1:8080/
 ```
 
-MySQL runs on:
-
-```text
-localhost:3306
-```
-
-Docker database values from `docker-compose.yml`:
+MySQL values from `docker-compose.yml`:
 
 ```text
 Database: shopease
@@ -751,92 +567,92 @@ Password: shopease
 Root password: root
 ```
 
-Stop Docker:
+Stop containers:
 
 ```bash
 docker compose down
 ```
 
-Stop Docker and delete MySQL data:
+Stop and remove database volume:
 
 ```bash
 docker compose down -v
 ```
 
-## 19. Deploy online and open in browser, not localhost
+## Deploy online on Render
 
-Localhost means the app is running only on your computer. To open it from any browser using a public internet link, deploy it to a cloud platform.
-
-This project includes `render.yaml`, so it is ready for Render deployment using Docker.
-
-### What URL you will get
-
-After deployment, Render gives you a public URL like:
+This project includes:
 
 ```text
-https://shopease-backend-api.onrender.com/
+render.yaml
 ```
 
-Your online links will look like:
+That file prepares the project for Render deployment using Docker.
 
-```text
-Frontend UI: https://shopease-backend-api.onrender.com/
-Swagger UI:  https://shopease-backend-api.onrender.com/swagger-ui/index.html
-Health:      https://shopease-backend-api.onrender.com/actuator/health
-```
+### Deployment steps
 
-### Deploy on Render step by step
-
-1. Make sure the latest code is pushed to GitHub.
+1. Push latest code to GitHub.
 2. Open:
 
    ```text
    https://render.com
    ```
 
-3. Sign up or login.
+3. Login or create an account.
 4. Click `New`.
 5. Click `Blueprint`.
-6. Connect your GitHub account if asked.
-7. Select this repository:
+6. Connect GitHub.
+7. Select:
 
    ```text
    Dinesh12328/shopease-backend-api
    ```
 
-8. Render will detect:
+8. Render detects `render.yaml`.
+9. Enter a private value for `ADMIN_PASSWORD`.
+10. Deploy the service.
 
-   ```text
-   render.yaml
-   ```
-
-9. Click `Apply` or `Deploy`.
-10. Wait for the first build to finish. It can take several minutes.
-11. When deploy succeeds, open your Render service URL.
-
-### Online admin login
-
-The admin email is:
+After deployment, Render gives a URL like:
 
 ```text
-admin@shopease.com
+https://shopease-backend-api.onrender.com/
 ```
 
-For `ADMIN_PASSWORD`, Render will ask you to enter a private value during deployment.
-
-Use a strong password, for example:
+Online URLs:
 
 ```text
-ShopEase@2026Strong!
+Frontend: https://shopease-backend-api.onrender.com/
+Swagger:  https://shopease-backend-api.onrender.com/swagger-ui/index.html
+Health:   https://shopease-backend-api.onrender.com/actuator/health
 ```
 
-Do not publish your online admin password in GitHub.
+Important: the simple Render demo uses H2, so data can reset when the service restarts. For permanent production data, connect a hosted MySQL database.
 
-### Important cloud note
+## Configuration
 
-This simple online deployment uses H2 database for demo/testing. That means data may reset when the cloud service restarts or redeploys.
+Main config file:
 
-For a real production deployment, connect the app to a cloud MySQL database using these environment variables:
+```text
+src/main/resources/application.yml
+```
+
+Important values:
+
+```yaml
+server:
+  port: ${PORT:${SERVER_PORT:8080}}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:shopease;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
+
+app:
+  admin:
+    email: ${ADMIN_EMAIL:admin@shopease.com}
+    password: ${ADMIN_PASSWORD:Admin@123}
+```
+
+For MySQL, set:
 
 ```text
 DB_URL
@@ -846,68 +662,11 @@ DB_DRIVER
 H2_CONSOLE=false
 ```
 
-## 20. Local configuration
+## Troubleshooting
 
-Main config file:
+### Frontend does not open
 
-```text
-src/main/resources/application.yml
-```
-
-Important settings:
-
-```yaml
-server:
-  port: 8080
-
-spring:
-  datasource:
-    url: jdbc:h2:mem:shopease
-
-app:
-  admin:
-    email: admin@shopease.com
-    password: Admin@123
-```
-
-You can change the port if 8080 is busy:
-
-```yaml
-server:
-  port: 9090
-```
-
-Then Swagger becomes:
-
-```text
-http://127.0.0.1:9090/swagger-ui/index.html
-```
-
-Then the frontend becomes:
-
-```text
-http://127.0.0.1:9090/
-```
-
-## 21. Troubleshooting
-
-### Problem: Swagger says Access Denied
-
-Make sure you are using the latest source code. Swagger, OpenAPI docs, health check, H2 console, public products, and public categories are allowed in Spring Security.
-
-Then restart the application from IntelliJ.
-
-Use:
-
-```text
-http://127.0.0.1:8080/swagger-ui/index.html
-```
-
-### Problem: This site cannot be reached
-
-The application is probably not running.
-
-Check IntelliJ console. You must see:
+Check that IntelliJ console shows:
 
 ```text
 Started ShopEaseApplication
@@ -916,72 +675,74 @@ Started ShopEaseApplication
 Then open:
 
 ```text
-http://127.0.0.1:8080/actuator/health
+http://127.0.0.1:8080/
 ```
 
-### Problem: Frontend opens but buttons fail
+### Swagger says access denied
 
-Check if you are logged in.
-
-- Cart and order APIs require `USER` or `ADMIN`.
-- Admin create product/category requires `ADMIN`.
-- If you see `401`, login again.
-- If you see `403`, you are using a normal user account for an admin action.
-
-### Problem: Codex in-app browser blocks localhost
-
-Use Chrome, Edge, or Firefox outside Codex.
-
-Open:
+Use:
 
 ```text
 http://127.0.0.1:8080/swagger-ui/index.html
 ```
 
-### Problem: Port 8080 is already used
+Swagger and OpenAPI routes are allowed in Spring Security.
 
-Either stop the other application using port 8080, or change this in `application.yml`:
+### Login fails
 
-```yaml
-server:
-  port: 9090
-```
-
-### Problem: Login fails
-
-Use the default admin:
+For local testing, use:
 
 ```text
 admin@shopease.com
 Admin@123
 ```
 
-If you changed credentials in environment variables or Docker, use those new values.
+For online Render deployment, use the password you entered in `ADMIN_PASSWORD`.
 
-### Problem: 401 Unauthorized
+### 401 Unauthorized
 
-You are calling a protected API without JWT token.
+You are calling a protected API without a valid JWT token.
 
-Login first, copy `data.token`, click `Authorize` in Swagger, and paste the token.
+Fix:
 
-### Problem: 403 Forbidden
+1. Login.
+2. Copy the token.
+3. Use `Authorization: Bearer <token>`.
+
+### 403 Forbidden
 
 Your token is valid, but your role does not have permission.
 
 Examples:
 
-- `POST /api/admin/products` requires `ADMIN`.
-- `POST /api/cart/add` works for `USER` or `ADMIN`.
+- Admin APIs require `ADMIN`.
+- Cart and order APIs require `USER` or `ADMIN`.
 
-## 22. Resume explanation
+### Port 8080 already in use
 
-You can describe this project like this:
+Change this in `application.yml`:
+
+```yaml
+server:
+  port: 9090
+```
+
+Then open:
 
 ```text
-Built a complete e-commerce backend using Java Spring Boot with JWT authentication,
-role-based authorization, product/category management, cart, order placement,
-payment records, Swagger documentation, JPA/Hibernate relationships, pagination,
-sorting, validation, exception handling, H2/MySQL database support, and Docker.
+http://127.0.0.1:9090/
+```
+
+## Resume value
+
+You can explain this project like this:
+
+```text
+Built a complete e-commerce application using Java Spring Boot with JWT authentication,
+role-based authorization, product/category management, cart and order workflow,
+payment records, JPA/Hibernate relationships, validation, exception handling,
+Swagger API documentation, Docker support, Render deployment configuration,
+and an interactive frontend UI.
 ```
 
 This project demonstrates:
@@ -990,9 +751,14 @@ This project demonstrates:
 - CRUD operations
 - Authentication and authorization
 - JWT security
+- Role-based access control
 - Database relationships
 - Layered backend architecture
-- Spring Data JPA repositories
+- Spring Data JPA
+- Hibernate
 - Validation and exception handling
-- API documentation with Swagger
-- Docker-based deployment setup
+- Swagger/OpenAPI documentation
+- Frontend/backend integration
+- Docker deployment
+- Cloud deployment preparation
+
