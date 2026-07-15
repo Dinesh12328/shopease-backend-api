@@ -2,7 +2,7 @@
 
 ShopEase is a full-stack e-commerce project built with a Spring Boot backend and an integrated browser UI served from the same application.
 
-It demonstrates real backend concepts such as REST APIs, CRUD operations, JWT authentication, role-based authorization, database relationships, cart management, order placement, admin product management, Swagger documentation, Docker support, and cloud deployment configuration.
+The application lets customers browse products, add items to a cart, place orders, and view their order history. Admin users can manage categories, products, and order status from the same browser interface.
 
 ## Project at a glance
 
@@ -733,31 +733,11 @@ Then open:
 http://127.0.0.1:9090/
 ```
 
-## Resume value
+## Project notes
 
-You can explain this project like this:
-
-```text
-Built a complete e-commerce application using Java Spring Boot with JWT authentication,
-role-based authorization, product/category management, cart and order workflow,
-payment records, JPA/Hibernate relationships, validation, exception handling,
-Swagger API documentation, Docker support, Render deployment configuration,
-and an integrated frontend UI.
-```
-
-This project demonstrates:
-
-- REST API development
-- CRUD operations
-- Authentication and authorization
-- JWT security
-- Role-based access control
-- Database relationships
-- Layered backend architecture
-- Spring Data JPA
-- Hibernate
-- Validation and exception handling
-- Swagger/OpenAPI documentation
-- Frontend/backend integration
-- Docker deployment
-- Cloud deployment preparation
+- The local setup uses H2 so the project can run quickly without installing a database.
+- The Docker setup can run the application with MySQL.
+- The Render setup is included for a simple online deployment.
+- The payment flow is simulated for this version. It stores payment records but does not connect to a real payment gateway.
+- Product image upload support exists on the backend, while the main UI uses image URLs for simpler testing.
+- For a production deployment, replace H2 with a hosted database and set strong private values for all environment variables.
