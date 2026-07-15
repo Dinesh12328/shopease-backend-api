@@ -26,9 +26,12 @@ public class CartService {
         CartItem item = items.findByCartIdAndProductId(cart.getId(), product.getId()).orElseGet(() -> {
             CartItem value = new CartItem(); value.setCart(cart); value.setProduct(product); value.setQuantity(0); return value;
         });
+        boolean newItem = item.getId() == null;
         int quantity = item.getQuantity() + request.quantity();
         validateStock(product, quantity);
-        item.setQuantity(quantity); items.save(item); cart.setUpdatedAt(Instant.now());
+        item.setQuantity(quantity); items.save(item);
+        if (newItem) cart.getItems().add(item);
+        cart.setUpdatedAt(Instant.now());
         return map(carts.save(cart));
     }
     @Transactional(readOnly = true) public CartResponse get() { return map(cart()); }
@@ -42,8 +45,13 @@ public class CartService {
     }
     @Transactional
     public CartResponse remove(Long itemId) {
-        Cart cart = cart(); items.delete(ownedItem(cart, itemId)); items.flush();
-        cart.setUpdatedAt(Instant.now()); return map(carts.findByUserId(currentUser.get().getId()).orElseThrow());
+        Cart cart = cart();
+        CartItem item = ownedItem(cart, itemId);
+        cart.getItems().removeIf(line -> line.getId().equals(item.getId()));
+        items.delete(item);
+        items.flush();
+        cart.setUpdatedAt(Instant.now());
+        return map(carts.save(cart));
     }
     @Transactional
     public void clear() { Cart cart = cart(); cart.getItems().clear(); carts.save(cart); }

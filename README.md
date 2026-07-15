@@ -693,6 +693,22 @@ Expected result:
 BUILD SUCCESS
 ```
 
+The test suite checks:
+
+- User registration and login
+- Admin login
+- Public product listing
+- Protected admin APIs
+- Category creation
+- Product creation
+- Cart add/update behavior
+- Order placement
+- User order history
+- Admin order status update
+- Frontend static page loading
+- OpenAPI docs endpoint
+- Health endpoint
+
 ## 18. Run with Docker and MySQL
 
 Use this if you want MySQL instead of H2.
