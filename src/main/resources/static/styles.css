@@ -1,12 +1,12 @@
 :root {
-  --bg: #eef2ff;
+  --bg: #f4f7fb;
   --surface: rgba(255, 255, 255, 0.86);
   --surface-solid: #ffffff;
   --text: #111827;
   --muted: #64748b;
-  --primary: #635bff;
-  --primary-2: #8b5cf6;
-  --secondary: #00a38c;
+  --primary: #2563eb;
+  --primary-2: #7c3aed;
+  --secondary: #059669;
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #16a34a;
@@ -32,9 +32,9 @@ body {
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 15% 5%, rgba(99, 91, 255, 0.23), transparent 34rem),
-    radial-gradient(circle at 85% 8%, rgba(0, 163, 140, 0.18), transparent 28rem),
-    linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #f8fafc 100%);
+    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, 0.18), transparent 32rem),
+    radial-gradient(circle at 88% 6%, rgba(5, 150, 105, 0.15), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, var(--bg) 44%, #f8fafc 100%);
 }
 
 body.drawer-open {
@@ -100,7 +100,7 @@ button {
   color: #fff;
   font-weight: 900;
   letter-spacing: -0.05em;
-  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  background: linear-gradient(135deg, #0f172a, var(--primary));
   box-shadow: 0 14px 30px rgba(99, 91, 255, 0.28);
 }
 
@@ -172,9 +172,9 @@ button {
   border-radius: 38px;
   color: #fff;
   background:
-    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.20), transparent 24rem),
-    radial-gradient(circle at 88% 12%, rgba(0, 213, 180, 0.35), transparent 22rem),
-    linear-gradient(135deg, #0f172a 0%, #312e81 52%, #635bff 100%);
+    radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.22), transparent 24rem),
+    radial-gradient(circle at 88% 12%, rgba(52, 211, 153, 0.32), transparent 22rem),
+    linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #7c3aed 100%);
 }
 
 .hero-copy::after {
@@ -209,6 +209,12 @@ button {
   line-height: 1.8;
 }
 
+.hero-copy .button.ghost,
+.hero-copy .button.secondary {
+  color: #0f172a;
+  background: #ffffff;
+}
+
 .hero-panel {
   display: grid;
   gap: 18px;
@@ -217,7 +223,7 @@ button {
 }
 
 .status-card,
-.demo-box {
+.assist-box {
   padding: 22px;
   border-radius: 24px;
   background: #fff;
@@ -234,7 +240,7 @@ button {
 .status-card span,
 .metric-card small,
 .metric-card span,
-.demo-box p,
+.assist-box p,
 .section-heading p {
   color: var(--muted);
 }
@@ -265,12 +271,12 @@ button {
   box-shadow: 0 0 0 7px rgba(239, 68, 68, 0.13);
 }
 
-.demo-box {
+.assist-box {
   display: grid;
   gap: 10px;
 }
 
-.demo-box p {
+.assist-box p {
   margin: 0;
   line-height: 1.6;
 }

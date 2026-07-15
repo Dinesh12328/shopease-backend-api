@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShopEase Storefront</title>
+  <title>ShopEase | Modern Shopping Platform</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
         <span class="logo">SE</span>
         <span>
           <strong>ShopEase</strong>
-          <small>Interactive store</small>
+          <small>Modern shopping platform</small>
         </span>
       </a>
 
@@ -21,7 +21,7 @@
         <a href="#catalog">Catalog</a>
         <a href="#orders">Orders</a>
         <a href="#adminPanel" id="adminNavLink" class="hidden">Admin</a>
-        <a href="/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger</a>
+        <a href="/swagger-ui/index.html" target="_blank" rel="noreferrer">API Docs</a>
       </nav>
 
       <div class="top-actions">
@@ -35,15 +35,15 @@
     <main>
       <section id="home" class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Spring Boot + JWT + Interactive UI</p>
-          <h1>Run the full shopping flow from one clean browser page.</h1>
+          <p class="eyebrow">Shop with ease</p>
+          <h1>Discover products, manage your cart, and place orders smoothly.</h1>
           <p>
-            Login, browse products, search by category or brand, add items to cart,
-            place orders, and manage admin tasks without touching Swagger.
+            A clean shopping experience with product search, secure login,
+            cart management, order tracking, and admin controls in one place.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#catalog">Explore products</a>
-            <a class="button secondary" href="#account">Login or register</a>
+            <a class="button primary" href="#catalog">Browse catalog</a>
+            <a class="button secondary" href="#account">My account</a>
           </div>
         </div>
 
@@ -51,15 +51,15 @@
           <div class="status-card">
             <span class="status-dot" id="apiStatusDot"></span>
             <div>
-              <small>Backend API</small>
+              <small>Service status</small>
               <strong id="apiStatus">Checking...</strong>
-              <span id="apiStatusHint">Calling /actuator/health</span>
+              <span id="apiStatusHint">Checking store availability</span>
             </div>
           </div>
-          <div class="demo-box">
-            <strong>Quick demo</strong>
-            <p>Use admin to create products, then register as a user to shop.</p>
-            <button id="fillAdminLogin" class="button ghost" type="button">Fill admin login</button>
+          <div class="assist-box">
+            <strong>Store manager access</strong>
+            <p>Sign in as admin to add categories, publish products, and manage customer orders.</p>
+            <button id="fillAdminLogin" class="button ghost" type="button">Use admin account</button>
           </div>
         </aside>
       </section>
@@ -118,13 +118,13 @@
               <p class="eyebrow">New customer</p>
               <h2>Register</h2>
             </div>
-            <button id="fillDemoRegister" class="chip" type="button">Demo data</button>
+            <button id="fillSampleRegister" class="chip" type="button">Sample user</button>
           </div>
 
           <form id="registerForm" class="form-grid single">
             <label>
               Name
-              <input id="registerName" type="text" value="Demo User" autocomplete="name" required>
+              <input id="registerName" type="text" value="ShopEase Customer" autocomplete="name" required>
             </label>
             <label>
               Email
@@ -142,7 +142,7 @@
       <section id="catalog" class="glass-card catalog-panel">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Storefront</p>
+            <p class="eyebrow">Catalog</p>
             <h2>Product catalog</h2>
           </div>
           <div class="heading-actions">
@@ -297,7 +297,7 @@
       <form id="orderForm" class="form-grid single checkout-form">
         <label>
           Shipping address
-          <textarea id="shippingAddress" rows="4" required>123 Demo Street, Mumbai, India</textarea>
+          <textarea id="shippingAddress" rows="4" required>42 Market Road, Mumbai, India</textarea>
         </label>
         <label>
           Payment method

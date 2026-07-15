@@ -1,6 +1,6 @@
 # ShopEase Backend API
 
-ShopEase is a full-stack e-commerce project built with a Spring Boot backend and an interactive browser UI served from the same application.
+ShopEase is a full-stack e-commerce project built with a Spring Boot backend and an integrated browser UI served from the same application.
 
 It demonstrates real backend concepts such as REST APIs, CRUD operations, JWT authentication, role-based authorization, database relationships, cart management, order placement, admin product management, Swagger documentation, Docker support, and cloud deployment configuration.
 
@@ -46,7 +46,7 @@ It demonstrates real backend concepts such as REST APIs, CRUD operations, JWT au
 
 ### Frontend UI features
 
-- Interactive storefront at `/`
+- Integrated shopping UI at `/`
 - Dashboard counters for products, categories, cart items, and orders
 - Login/register forms
 - Product catalog cards
@@ -387,7 +387,7 @@ Body:
 
 ```json
 {
-  "name": "Demo User",
+  "name": "ShopEase Customer",
   "email": "user@example.com",
   "password": "User@1234"
 }
@@ -424,7 +424,7 @@ Body:
 
 ```json
 {
-  "shippingAddress": "123 Demo Street, Mumbai, India",
+  "shippingAddress": "42 Market Road, Mumbai, India",
   "paymentMethod": "COD"
 }
 ```
@@ -626,7 +626,7 @@ Swagger:  https://shopease-backend-api.onrender.com/swagger-ui/index.html
 Health:   https://shopease-backend-api.onrender.com/actuator/health
 ```
 
-Important: the simple Render demo uses H2, so data can reset when the service restarts. For permanent production data, connect a hosted MySQL database.
+Important: the basic Render deployment uses H2, so data can reset when the service restarts. For permanent production data, connect a hosted MySQL database.
 
 ## Configuration
 
@@ -742,7 +742,7 @@ Built a complete e-commerce application using Java Spring Boot with JWT authenti
 role-based authorization, product/category management, cart and order workflow,
 payment records, JPA/Hibernate relationships, validation, exception handling,
 Swagger API documentation, Docker support, Render deployment configuration,
-and an interactive frontend UI.
+and an integrated frontend UI.
 ```
 
 This project demonstrates:
@@ -761,4 +761,3 @@ This project demonstrates:
 - Frontend/backend integration
 - Docker deployment
 - Cloud deployment preparation
-

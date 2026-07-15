@@ -164,11 +164,11 @@ async function checkHealth() {
     const health = await fetch("/actuator/health").then((res) => res.json());
     const online = health.status === "UP";
     $("apiStatus").textContent = online ? "Online" : health.status;
-    $("apiStatusHint").textContent = online ? "Spring Boot API is ready" : "API returned a non-UP status";
+    $("apiStatusHint").textContent = online ? "Store services are ready" : "Store service returned a non-ready status";
     dot.className = `status-dot ${online ? "online" : "offline"}`;
   } catch {
     $("apiStatus").textContent = "Offline";
-    $("apiStatusHint").textContent = "Start ShopEaseApplication from IntelliJ";
+    $("apiStatusHint").textContent = "Start the application from IntelliJ";
     dot.className = "status-dot offline";
   }
 }
@@ -680,9 +680,9 @@ function clearFilters() {
   loadProducts().catch((error) => showToast(getErrorMessage(error), "error"));
 }
 
-function fillDemoRegister() {
+function fillSampleRegister() {
   const stamp = Date.now();
-  $("registerName").value = "Demo User";
+  $("registerName").value = "ShopEase Customer";
   $("registerEmail").value = `user${stamp}@example.com`;
   $("registerPassword").value = "User@1234";
 }
@@ -697,7 +697,7 @@ function bindEvents() {
   $("loginForm").addEventListener("submit", login);
   $("registerForm").addEventListener("submit", register);
   $("logoutButton").addEventListener("click", () => clearSession(true));
-  $("fillDemoRegister").addEventListener("click", fillDemoRegister);
+  $("fillSampleRegister").addEventListener("click", fillSampleRegister);
   $("fillAdminLogin").addEventListener("click", fillAdminLogin);
 
   $("openCartDrawer").addEventListener("click", openCartDrawer);
