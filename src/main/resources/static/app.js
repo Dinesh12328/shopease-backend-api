@@ -6,10 +6,19 @@ const state = {
   cart: null,
   orders: [],
   adminOrders: [],
+  productRequestId: 0,
 };
 
 const orderStatuses = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
 const $ = (id) => document.getElementById(id);
+
+function debounce(callback, delay = 380) {
+  let timer;
+  return (...args) => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => callback(...args), delay);
+  };
+}
 
 function money(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -49,6 +58,36 @@ function getErrorMessage(error) {
     return "Cannot reach the server. Check that the app is running or wait for Render to wake up.";
   }
   return error?.message || "Something went wrong";
+}
+
+function submitButton(event) {
+  return event?.submitter || event?.target?.querySelector('button[type="submit"]');
+}
+
+function setButtonBusy(button, busy, busyText = "Working...") {
+  if (!button) return;
+
+  if (busy) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = busyText;
+    button.disabled = true;
+    button.classList.add("loading");
+    return;
+  }
+
+  button.textContent = button.dataset.originalText || button.textContent;
+  button.disabled = false;
+  button.classList.remove("loading");
+  delete button.dataset.originalText;
+}
+
+async function withButtonBusy(button, busyText, callback) {
+  setButtonBusy(button, true, busyText);
+  try {
+    return await callback();
+  } finally {
+    setButtonBusy(button, false);
+  }
 }
 
 function normalizeImageUrl(value) {
@@ -218,6 +257,8 @@ function renderCategoryOptions() {
 
 async function loadProducts() {
   const loading = $("catalogLoading");
+  const grid = $("productGrid");
+  const requestId = ++state.productRequestId;
   const params = new URLSearchParams();
   const name = $("searchName").value.trim();
   const brand = $("searchBrand").value.trim();
@@ -232,14 +273,19 @@ async function loadProducts() {
   params.set("sort", sort);
 
   loading.classList.remove("hidden");
+  grid?.classList.add("is-loading");
 
   try {
     const page = await api(`/api/products?${params.toString()}`);
+    if (requestId !== state.productRequestId) return;
     state.products = pageContent(page);
     renderProducts();
     updateMetrics();
   } finally {
-    loading.classList.add("hidden");
+    if (requestId === state.productRequestId) {
+      loading.classList.add("hidden");
+      grid?.classList.remove("is-loading");
+    }
   }
 }
 
@@ -297,15 +343,15 @@ function renderProducts() {
     .join("");
 
   document.querySelectorAll(".add-to-cart").forEach((button) => {
-    button.addEventListener("click", () => addToCart(Number(button.dataset.productId)));
+    button.addEventListener("click", () => addToCart(Number(button.dataset.productId), button));
   });
 
   document.querySelectorAll(".delete-product").forEach((button) => {
-    button.addEventListener("click", () => deleteProduct(Number(button.dataset.productId)));
+    button.addEventListener("click", () => deleteProduct(Number(button.dataset.productId), button));
   });
 }
 
-async function addToCart(productId) {
+async function addToCart(productId, button) {
   if (!state.token) {
     showToast("Login or register before adding products to cart", "error");
     document.location.hash = "#account";
@@ -313,9 +359,11 @@ async function addToCart(productId) {
   }
 
   try {
-    state.cart = await api("/api/cart/add", {
-      method: "POST",
-      body: JSON.stringify({ productId, quantity: 1 }),
+    await withButtonBusy(button, "Adding...", async () => {
+      state.cart = await api("/api/cart/add", {
+        method: "POST",
+        body: JSON.stringify({ productId, quantity: 1 }),
+      });
     });
     renderCart(state.cart);
     updateMetrics();
@@ -326,7 +374,7 @@ async function addToCart(productId) {
   }
 }
 
-async function deleteProduct(productId) {
+async function deleteProduct(productId, button) {
   if (state.user?.role !== "ADMIN") {
     showToast("Only admin can delete products", "error");
     return;
@@ -336,7 +384,7 @@ async function deleteProduct(productId) {
   if (!confirmed) return;
 
   try {
-    await api(`/api/admin/products/${productId}`, { method: "DELETE" });
+    await withButtonBusy(button, "Deleting...", () => api(`/api/admin/products/${productId}`, { method: "DELETE" }));
     showToast("Product deleted");
     await loadProducts();
     await loadCart();
@@ -401,20 +449,22 @@ function renderCart(cart) {
     .join("");
 
   document.querySelectorAll(".update-cart-item").forEach((button) => {
-    button.addEventListener("click", () => updateCartItem(Number(button.dataset.itemId)));
+    button.addEventListener("click", () => updateCartItem(Number(button.dataset.itemId), button));
   });
 
   document.querySelectorAll(".remove-cart-item").forEach((button) => {
-    button.addEventListener("click", () => removeCartItem(Number(button.dataset.itemId)));
+    button.addEventListener("click", () => removeCartItem(Number(button.dataset.itemId), button));
   });
 }
 
-async function updateCartItem(itemId) {
+async function updateCartItem(itemId, button) {
   try {
     const quantity = Number($(`qty-${itemId}`).value);
-    state.cart = await api(`/api/cart/items/${itemId}`, {
-      method: "PUT",
-      body: JSON.stringify({ quantity }),
+    await withButtonBusy(button, "Updating...", async () => {
+      state.cart = await api(`/api/cart/items/${itemId}`, {
+        method: "PUT",
+        body: JSON.stringify({ quantity }),
+      });
     });
     renderCart(state.cart);
     updateMetrics();
@@ -424,9 +474,11 @@ async function updateCartItem(itemId) {
   }
 }
 
-async function removeCartItem(itemId) {
+async function removeCartItem(itemId, button) {
   try {
-    state.cart = await api(`/api/cart/items/${itemId}`, { method: "DELETE" });
+    await withButtonBusy(button, "Removing...", async () => {
+      state.cart = await api(`/api/cart/items/${itemId}`, { method: "DELETE" });
+    });
     renderCart(state.cart);
     updateMetrics();
     showToast("Item removed from cart");
@@ -444,13 +496,17 @@ async function placeOrder(event) {
   }
 
   try {
-    const order = await api("/api/orders/place", {
-      method: "POST",
-      body: JSON.stringify({
-        shippingAddress: $("shippingAddress").value,
-        paymentMethod: $("paymentMethod").value,
-      }),
-    });
+    const order = await withButtonBusy(
+      submitButton(event),
+      "Placing order...",
+      () => api("/api/orders/place", {
+        method: "POST",
+        body: JSON.stringify({
+          shippingAddress: $("shippingAddress").value,
+          paymentMethod: $("paymentMethod").value,
+        }),
+      })
+    );
 
     showToast(`Order #${order.id} placed successfully`);
     closeCartDrawer();
@@ -580,10 +636,12 @@ function renderAdminOrders(orders) {
 async function updateOrderStatus(orderId) {
   try {
     const status = $(`status-${orderId}`).value;
-    await api(`/api/admin/orders/${orderId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
+    const button = document.querySelector(`.update-order-status[data-order-id="${orderId}"]`);
+    await withButtonBusy(button, "Updating...", () => api(`/api/admin/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      })
+    );
     showToast(`Order #${orderId} updated`);
     await Promise.all([loadAdminOrders(), loadOrders(), loadProducts()]);
   } catch (error) {
@@ -595,13 +653,15 @@ async function createCategory(event) {
   event.preventDefault();
 
   try {
-    await api("/api/admin/categories", {
-      method: "POST",
-      body: JSON.stringify({
-        name: $("categoryName").value,
-        description: $("categoryDescription").value,
-      }),
-    });
+    await withButtonBusy(submitButton(event), "Adding category...", () =>
+      api("/api/admin/categories", {
+        method: "POST",
+        body: JSON.stringify({
+          name: $("categoryName").value,
+          description: $("categoryDescription").value,
+        }),
+      })
+    );
     $("categoryForm").reset();
     await loadCategories();
     showToast("Category created");
@@ -619,18 +679,20 @@ async function createProduct(event) {
   }
 
   try {
-    await api("/api/admin/products", {
-      method: "POST",
-      body: JSON.stringify({
-        name: $("productName").value,
-        description: $("productDescription").value,
-        price: Number($("productPrice").value),
-        stock: Number($("productStock").value),
-        brand: $("productBrand").value,
-        categoryId: Number($("productCategory").value),
-        imageUrl: normalizeImageUrl($("productImageUrl").value),
-      }),
-    });
+    await withButtonBusy(submitButton(event), "Adding product...", () =>
+      api("/api/admin/products", {
+        method: "POST",
+        body: JSON.stringify({
+          name: $("productName").value,
+          description: $("productDescription").value,
+          price: Number($("productPrice").value),
+          stock: Number($("productStock").value),
+          brand: $("productBrand").value,
+          categoryId: Number($("productCategory").value),
+          imageUrl: normalizeImageUrl($("productImageUrl").value),
+        }),
+      })
+    );
     $("productForm").reset();
     renderCategoryOptions();
     await loadProducts();
@@ -645,13 +707,15 @@ async function login(event) {
   event.preventDefault();
 
   try {
-    const authResponse = await api("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: $("loginEmail").value,
-        password: $("loginPassword").value,
-      }),
-    });
+    const authResponse = await withButtonBusy(submitButton(event), "Logging in...", () =>
+      api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: $("loginEmail").value,
+          password: $("loginPassword").value,
+        }),
+      })
+    );
     saveSession(authResponse);
     showToast(`Welcome ${authResponse.user.name}`);
     await afterAuthRefresh();
@@ -664,14 +728,16 @@ async function register(event) {
   event.preventDefault();
 
   try {
-    const authResponse = await api("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        name: $("registerName").value,
-        email: $("registerEmail").value,
-        password: $("registerPassword").value,
-      }),
-    });
+    const authResponse = await withButtonBusy(submitButton(event), "Creating account...", () =>
+      api("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: $("registerName").value,
+          email: $("registerEmail").value,
+          password: $("registerPassword").value,
+        }),
+      })
+    );
     saveSession(authResponse);
     showToast(`Account created for ${authResponse.user.name}`);
     await afterAuthRefresh();
@@ -717,16 +783,38 @@ function fillAdminLogin() {
   document.location.hash = "#account";
 }
 
+function fillSampleImage() {
+  const productName = $("productName").value.trim() || "ShopEase Product";
+  const text = encodeURIComponent(productName);
+  $("productImageUrl").value = `https://placehold.co/900x700/0f172a/ffffff/png?text=${text}`;
+  $("productImageUrl").focus();
+}
+
+function scrollToSection(hash) {
+  const section = document.querySelector(hash);
+  if (!section) return false;
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.pushState(null, "", hash);
+  return true;
+}
+
 function bindEvents() {
   $("loginForm").addEventListener("submit", login);
   $("registerForm").addEventListener("submit", register);
   $("logoutButton").addEventListener("click", () => clearSession(true));
   $("fillSampleRegister").addEventListener("click", fillSampleRegister);
   $("fillAdminLogin").addEventListener("click", fillAdminLogin);
+  $("fillSampleImage").addEventListener("click", fillSampleImage);
 
   $("openCartDrawer").addEventListener("click", openCartDrawer);
   $("closeCartDrawer").addEventListener("click", closeCartDrawer);
   $("cartBackdrop").addEventListener("click", closeCartDrawer);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeCartDrawer();
+    }
+  });
 
   $("productSearchForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -738,6 +826,23 @@ function bindEvents() {
   });
 
   $("clearFilters").addEventListener("click", clearFilters);
+  const debouncedLoadProducts = debounce(() => {
+    loadProducts().catch((error) => showToast(getErrorMessage(error), "error"));
+  });
+  ["searchName", "searchBrand"].forEach((id) => {
+    $(id).addEventListener("input", debouncedLoadProducts);
+  });
+  ["searchCategory", "sortProducts"].forEach((id) => {
+    $(id).addEventListener("change", () => loadProducts().catch((error) => showToast(getErrorMessage(error), "error")));
+  });
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const hash = link.getAttribute("href");
+      if (hash && hash.length > 1 && scrollToSection(hash)) {
+        event.preventDefault();
+      }
+    });
+  });
   $("refreshProducts").addEventListener("click", () => loadProducts().catch((error) => showToast(getErrorMessage(error), "error")));
   $("refreshCart").addEventListener("click", loadCart);
   $("refreshOrders").addEventListener("click", loadOrders);

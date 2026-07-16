@@ -248,11 +248,14 @@
                 Category
                 <select id="productCategory" required></select>
               </label>
-              <label>
-                Image URL
-                <input id="productImageUrl" type="text" inputmode="url" placeholder="https://example.com/product.jpg or www.example.com/product.jpg">
+              <div class="form-field">
+                <label for="productImageUrl">Image URL</label>
+                <div class="field-row">
+                  <input id="productImageUrl" type="text" inputmode="url" placeholder="https://example.com/product.jpg or www.example.com/product.jpg">
+                  <button id="fillSampleImage" class="chip field-chip" type="button">Use sample</button>
+                </div>
                 <small class="field-hint">Paste a public browser image link. If a website blocks image loading, ShopEase keeps the card layout clean and shows a fallback.</small>
-              </label>
+              </div>
               <label class="full">
                 Description
                 <textarea id="productDescription" rows="3" placeholder="Product details"></textarea>
