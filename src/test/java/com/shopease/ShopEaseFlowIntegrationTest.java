@@ -161,6 +161,37 @@ class ShopEaseFlowIntegrationTest {
                 .andExpect(jsonPath("$.data.stock").value(2));
     }
 
+    @Test
+    void productImageLinksAcceptLongBrowserUrls() throws Exception {
+        String adminToken = login("admin@test.com", "Admin@123");
+
+        Long categoryId = postJson("/api/admin/categories", Map.of(
+                "name", "Image Link Test " + UUID.randomUUID(),
+                "description", "Products with browser image links"
+        ), adminToken)
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponseJson()
+                .at("/data/id")
+                .asLong();
+
+        String longImageUrl = "www.images.example.com/phones/galaxy-s24.png?tracking="
+                + "a".repeat(1200)
+                + "&size=large&format=webp";
+
+        postJson("/api/admin/products", Map.of(
+                "name", "Long Image Link Phone",
+                "description", "Product with a long copied browser image URL",
+                "price", new BigDecimal("45999.00"),
+                "stock", 12,
+                "brand", "Samsung",
+                "categoryId", categoryId,
+                "imageUrl", longImageUrl
+        ), adminToken)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.imageUrl").value("https://" + longImageUrl));
+    }
+
     private String login(String email, String password) throws Exception {
         return postJson("/api/auth/login", Map.of("email", email, "password", password), null)
                 .andExpect(status().isOk())

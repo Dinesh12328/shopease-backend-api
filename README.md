@@ -283,6 +283,9 @@ http://127.0.0.1:8080/
    ```
 
 4. Create a product under that category.
+   - In `Image URL`, paste a public browser image link.
+   - Links like `https://example.com/product.jpg`, `www.example.com/product.png`, and long image links with query text are accepted.
+   - If an outside website blocks image loading, the product card keeps its layout and shows a fallback instead of breaking.
 5. Go to the catalog section.
 6. Search/filter/sort products.
 7. Register a normal user.

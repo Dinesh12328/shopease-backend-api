@@ -13,7 +13,7 @@ public final class ProductDtos {
             @NotNull @Min(0) Integer stock,
             @Size(max = 100) String brand,
             @NotNull Long categoryId,
-            @Size(max = 1000) String imageUrl) {}
+            @Size(max = 5000) String imageUrl) {}
     public record ProductResponse(Long id, String name, String description, BigDecimal price,
             Integer stock, String brand, String imageUrl, Long categoryId, String categoryName,
             Instant createdAt, Instant updatedAt) {}

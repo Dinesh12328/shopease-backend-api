@@ -14,6 +14,7 @@ public class Product {
     @Column(nullable = false, precision = 12, scale = 2) private BigDecimal price;
     @Column(nullable = false) private Integer stock;
     private String brand;
+    @Column(length = 5000)
     private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) private Category category;
     @Column(nullable = false, updatable = false) private Instant createdAt = Instant.now();

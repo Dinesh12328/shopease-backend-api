@@ -45,7 +45,28 @@ function showToast(message, type = "success") {
 }
 
 function getErrorMessage(error) {
+  if (error?.name === "TypeError" && /fetch/i.test(error.message || "")) {
+    return "Cannot reach the server. Check that the app is running or wait for Render to wake up.";
+  }
   return error?.message || "Something went wrong";
+}
+
+function normalizeImageUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (/^www\./i.test(raw)) return `https://${raw}`;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}([:/?#]|$)/i.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw)) {
+    return `https://${raw}`;
+  }
+  return raw;
+}
+
+function handleProductImageError(image) {
+  const frame = image.closest(".product-image");
+  image.remove();
+  frame?.classList.remove("has-photo");
+  frame?.classList.add("image-failed");
 }
 
 async function api(path, options = {}) {
@@ -233,9 +254,11 @@ function renderProducts() {
   grid.innerHTML = state.products
     .map((product) => {
       const firstLetter = escapeHtml(product.name?.charAt(0) || "P");
-      const image = product.imageUrl
-        ? `<img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" onerror="this.remove()">`
+      const imageUrl = normalizeImageUrl(product.imageUrl);
+      const image = imageUrl
+        ? `<img class="product-photo" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="handleProductImageError(this)">`
         : "";
+      const imageClass = imageUrl ? "product-image has-photo" : "product-image";
       const lowStock = Number(product.stock) <= 3;
       const disabled = product.stock < 1 ? "disabled" : "";
       const adminDelete = state.user?.role === "ADMIN"
@@ -244,9 +267,10 @@ function renderProducts() {
 
       return `
         <article class="product-card">
-          <div class="product-image">
+          <div class="${imageClass}">
             <span class="stock-badge ${lowStock ? "low" : ""}">${product.stock} in stock</span>
-            <span>${firstLetter}</span>
+            <span class="product-fallback">${firstLetter}</span>
+            <span class="image-warning">Image link blocked</span>
             ${image}
           </div>
           <div class="product-body">
@@ -604,7 +628,7 @@ async function createProduct(event) {
         stock: Number($("productStock").value),
         brand: $("productBrand").value,
         categoryId: Number($("productCategory").value),
-        imageUrl: $("productImageUrl").value,
+        imageUrl: normalizeImageUrl($("productImageUrl").value),
       }),
     });
     $("productForm").reset();

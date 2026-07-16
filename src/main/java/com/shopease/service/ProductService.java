@@ -63,7 +63,21 @@ public class ProductService {
         Category category = categories.findById(r.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + r.categoryId()));
         p.setName(r.name().trim()); p.setDescription(r.description()); p.setPrice(r.price());
-        p.setStock(r.stock()); p.setBrand(r.brand()); p.setCategory(category); p.setImageUrl(r.imageUrl());
+        p.setStock(r.stock()); p.setBrand(r.brand()); p.setCategory(category); p.setImageUrl(cleanImageUrl(r.imageUrl()));
+    }
+
+    private String cleanImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return null;
+        String cleaned = imageUrl.trim();
+        if (cleaned.startsWith("//")) return "https:" + cleaned;
+        if (cleaned.regionMatches(true, 0, "www.", 0, 4)) return "https://" + cleaned;
+        if (looksLikeHostPath(cleaned)) return "https://" + cleaned;
+        return cleaned;
+    }
+
+    private boolean looksLikeHostPath(String value) {
+        return !value.matches("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")
+                && value.matches("(?i)^[a-z0-9.-]+\\.[a-z]{2,}([:/?#].*)?$");
     }
     ProductResponse map(Product p) {
         return new ProductResponse(p.getId(), p.getName(), p.getDescription(), p.getPrice(), p.getStock(),
