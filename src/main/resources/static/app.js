@@ -7,6 +7,7 @@ const state = {
   orders: [],
   adminOrders: [],
   productRequestId: 0,
+  orderInProgress: false,
 };
 
 const orderStatuses = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
@@ -60,8 +61,9 @@ function getErrorMessage(error) {
   return error?.message || "Something went wrong";
 }
 
-function submitButton(event) {
-  return event?.submitter || event?.target?.querySelector('button[type="submit"]');
+function submitButton(event, fallbackId = null) {
+  if (event?.target?.matches?.('button[type="submit"], button[type="button"]')) return event.target;
+  return event?.submitter || event?.target?.querySelector('button[type="submit"]') || (fallbackId ? $(fallbackId) : null);
 }
 
 function setButtonBusy(button, busy, busyText = "Working...") {
@@ -90,6 +92,15 @@ async function withButtonBusy(button, busyText, callback) {
   }
 }
 
+async function runButtonAction(button, busyText, callback) {
+  try {
+    return await withButtonBusy(button, busyText, callback);
+  } catch (error) {
+    showToast(getErrorMessage(error), "error");
+    return null;
+  }
+}
+
 function normalizeImageUrl(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
@@ -106,6 +117,14 @@ function handleProductImageError(image) {
   image.remove();
   frame?.classList.remove("has-photo");
   frame?.classList.add("image-failed");
+}
+
+function resetDeleteConfirmation(button) {
+  if (!button) return;
+  window.clearTimeout(button.confirmDeleteTimer);
+  button.dataset.confirmingDelete = "";
+  button.textContent = "Delete";
+  button.classList.remove("confirm-delete");
 }
 
 async function api(path, options = {}) {
@@ -143,7 +162,7 @@ async function api(path, options = {}) {
     if (response.status === 401 && state.token && !path.includes("/api/auth/")) {
       clearSession(false);
     }
-    throw new Error(payload?.message || `${response.status} ${response.statusText}`);
+    throw new Error(payload?.message || payload?.error || `${response.status} ${response.statusText}`);
   }
 
   return payload?.data ?? payload;
@@ -380,8 +399,17 @@ async function deleteProduct(productId, button) {
     return;
   }
 
-  const confirmed = window.confirm("Delete this product from the store?");
-  if (!confirmed) return;
+  if (button && button.dataset.confirmingDelete !== "true") {
+    button.dataset.confirmingDelete = "true";
+    button.textContent = "Confirm delete";
+    button.classList.add("confirm-delete");
+    showToast("Click Confirm delete to remove this product", "error");
+    window.clearTimeout(button.confirmDeleteTimer);
+    button.confirmDeleteTimer = window.setTimeout(() => resetDeleteConfirmation(button), 4500);
+    return;
+  }
+
+  resetDeleteConfirmation(button);
 
   try {
     await withButtonBusy(button, "Deleting...", () => api(`/api/admin/products/${productId}`, { method: "DELETE" }));
@@ -490,19 +518,29 @@ async function removeCartItem(itemId, button) {
 async function placeOrder(event) {
   event.preventDefault();
 
+  if (state.orderInProgress) return;
+
   if (!state.token) {
     showToast("Login before placing an order", "error");
     return;
   }
 
+  const shippingAddress = $("shippingAddress").value.trim();
+  if (!shippingAddress) {
+    $("shippingAddress").focus();
+    showToast("Enter a shipping address", "error");
+    return;
+  }
+
+  state.orderInProgress = true;
   try {
     const order = await withButtonBusy(
-      submitButton(event),
+      submitButton(event, "placeOrderButton"),
       "Placing order...",
       () => api("/api/orders/place", {
         method: "POST",
         body: JSON.stringify({
-          shippingAddress: $("shippingAddress").value,
+          shippingAddress,
           paymentMethod: $("paymentMethod").value,
         }),
       })
@@ -516,6 +554,8 @@ async function placeOrder(event) {
     }
   } catch (error) {
     showToast(getErrorMessage(error), "error");
+  } finally {
+    state.orderInProgress = false;
   }
 }
 
@@ -754,6 +794,7 @@ function openCartDrawer() {
   $("cartDrawer").classList.add("open");
   $("cartDrawer").setAttribute("aria-hidden", "false");
   document.body.classList.add("drawer-open");
+  $("orderForm").classList.toggle("hidden", !state.token);
 }
 
 function closeCartDrawer() {
@@ -843,12 +884,13 @@ function bindEvents() {
       }
     });
   });
-  $("refreshProducts").addEventListener("click", () => loadProducts().catch((error) => showToast(getErrorMessage(error), "error")));
-  $("refreshCart").addEventListener("click", loadCart);
-  $("refreshOrders").addEventListener("click", loadOrders);
-  $("refreshAdminOrders").addEventListener("click", loadAdminOrders);
+  $("refreshProducts").addEventListener("click", (event) => runButtonAction(event.currentTarget, "Refreshing...", loadProducts));
+  $("refreshCart").addEventListener("click", (event) => runButtonAction(event.currentTarget, "Refreshing...", loadCart));
+  $("refreshOrders").addEventListener("click", (event) => runButtonAction(event.currentTarget, "Refreshing...", loadOrders));
+  $("refreshAdminOrders").addEventListener("click", (event) => runButtonAction(event.currentTarget, "Refreshing...", loadAdminOrders));
 
   $("orderForm").addEventListener("submit", placeOrder);
+  $("placeOrderButton").addEventListener("click", placeOrder);
   $("categoryForm").addEventListener("submit", createCategory);
   $("productForm").addEventListener("submit", createProduct);
 }

@@ -820,6 +820,11 @@ textarea {
   background: #fee2e2;
 }
 
+.product-actions .delete-product.confirm-delete {
+  color: #fff;
+  background: #dc2626;
+}
+
 .orders-list,
 .cart-items {
   display: grid;
@@ -922,12 +927,13 @@ textarea {
   padding: 22px;
   background: #fff;
   box-shadow: -24px 0 70px rgba(15, 23, 42, 0.24);
-  transform: translateX(100%);
-  transition: transform 0.36s var(--ease);
+  opacity: 0;
+  transform: none;
+  transition: opacity 0.2s var(--ease);
 }
 
 .cart-drawer.open .drawer-panel {
-  transform: translateX(0);
+  opacity: 1;
 }
 
 .cart-items {
@@ -970,6 +976,7 @@ textarea {
   right: 24px;
   bottom: 24px;
   z-index: 90;
+  pointer-events: none;
   width: min(430px, calc(100% - 48px));
   padding: 16px 18px;
   border-radius: var(--radius-md);

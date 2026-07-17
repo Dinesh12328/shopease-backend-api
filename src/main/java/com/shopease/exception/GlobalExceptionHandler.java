@@ -1,9 +1,12 @@
 package com.shopease.exception;
 
 import org.springframework.http.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.time.Instant;
 import java.util.*;
@@ -26,6 +29,18 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getField() + ": " + e.getDefaultMessage()).collect(Collectors.joining(", "));
         return error(HttpStatus.BAD_REQUEST, message);
+    }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ErrorResponse> invalidJson(HttpMessageNotReadableException ex) {
+        return error(HttpStatus.BAD_REQUEST, "Request body is invalid. Check JSON field names and allowed values");
+    }
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> typeMismatch(MethodArgumentTypeMismatchException ex) {
+        return error(HttpStatus.BAD_REQUEST, "Invalid value for " + ex.getName());
+    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ErrorResponse> dataIntegrity(DataIntegrityViolationException ex) {
+        return error(HttpStatus.BAD_REQUEST, "This action cannot be completed because related records already exist");
     }
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ErrorResponse> denied(AccessDeniedException ex) {

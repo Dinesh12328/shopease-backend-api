@@ -192,6 +192,82 @@ class ShopEaseFlowIntegrationTest {
                 .andExpect(jsonPath("$.data.imageUrl").value("https://" + longImageUrl));
     }
 
+    @Test
+    void deleteGuardsAndInvalidRequestsReturnClearMessages() throws Exception {
+        String adminToken = login("admin@test.com", "Admin@123");
+
+        Long categoryId = postJson("/api/admin/categories", Map.of(
+                "name", "Protected Category " + UUID.randomUUID(),
+                "description", "Category used by a product"
+        ), adminToken)
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponseJson()
+                .at("/data/id")
+                .asLong();
+
+        Long productId = postJson("/api/admin/products", Map.of(
+                "name", "Protected Phone",
+                "description", "Product used in an order",
+                "price", new BigDecimal("21999.00"),
+                "stock", 4,
+                "brand", "ShopEase",
+                "categoryId", categoryId,
+                "imageUrl", "www.example.com/protected-phone.png"
+        ), adminToken)
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponseJson()
+                .at("/data/id")
+                .asLong();
+
+        mvc.perform(delete("/api/admin/categories/{id}", categoryId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("Category cannot be deleted")));
+
+        String userToken = postJson("/api/auth/register", Map.of(
+                "name", "Delete Guard Shopper",
+                "email", "guard-" + UUID.randomUUID() + "@example.com",
+                "password", "Password1"
+        ), null)
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponseJson()
+                .at("/data/token")
+                .asText();
+
+        postJson("/api/cart/add", Map.of("productId", productId, "quantity", 1), userToken)
+                .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/admin/products/{id}", productId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("present in a cart")));
+
+        postJson("/api/orders/place", Map.of(
+                "shippingAddress", "55 Guard Street",
+                "paymentMethod", "CARD"
+        ), userToken).andExpect(status().isCreated());
+
+        mvc.perform(delete("/api/admin/products/{id}", productId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("already used in an order")));
+
+        mvc.perform(post("/api/orders/place")
+                        .header("Authorization", bearer(userToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "shippingAddress": "55 Guard Street",
+                                  "paymentMethod": "BROKEN"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("Request body is invalid")));
+    }
+
     private String login(String email, String password) throws Exception {
         return postJson("/api/auth/login", Map.of("email", email, "password", password), null)
                 .andExpect(status().isOk())

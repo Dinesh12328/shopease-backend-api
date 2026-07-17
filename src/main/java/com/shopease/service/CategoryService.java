@@ -3,7 +3,7 @@ package com.shopease.service;
 import com.shopease.dto.ProductDtos.*;
 import com.shopease.entity.Category;
 import com.shopease.exception.*;
-import com.shopease.repository.CategoryRepository;
+import com.shopease.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categories;
+    private final ProductRepository products;
     @Transactional(readOnly = true)
     public List<CategoryResponse> all() { return categories.findAll().stream().map(this::map).toList(); }
     @Transactional
@@ -31,7 +32,12 @@ public class CategoryService {
         c.setName(request.name().trim()); c.setDescription(request.description());
         return map(categories.save(c));
     }
-    @Transactional public void delete(Long id) { categories.delete(entity(id)); }
+    @Transactional public void delete(Long id) {
+        Category category = entity(id);
+        if (products.countByCategoryId(id) > 0)
+            throw new BadRequestException("Category cannot be deleted while products are assigned to it");
+        categories.delete(category);
+    }
     private Category entity(Long id) {
         return categories.findById(id).orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
     }

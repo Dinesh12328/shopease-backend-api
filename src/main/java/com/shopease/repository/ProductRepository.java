@@ -13,4 +13,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     @Query("select coalesce(sum(ci.quantity), 0) from CartItem ci where ci.product.id = :productId")
     long quantityReservedInCarts(@Param("productId") Long productId);
+
+    @Query("select count(oi) from OrderItem oi where oi.product.id = :productId")
+    long quantitySoldInOrders(@Param("productId") Long productId);
+
+    @Query("select count(p) from Product p where p.category.id = :categoryId")
+    long countByCategoryId(@Param("categoryId") Long categoryId);
 }

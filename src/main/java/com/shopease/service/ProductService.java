@@ -48,6 +48,8 @@ public class ProductService {
         Product product = entity(id);
         if (products.quantityReservedInCarts(id) > 0)
             throw new BadRequestException("Product cannot be deleted while it is present in a cart");
+        if (products.quantitySoldInOrders(id) > 0)
+            throw new BadRequestException("Product cannot be deleted because it is already used in an order");
         products.delete(product);
     }
     @Transactional
